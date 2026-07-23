@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dreamcast ✦</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-sparkle="0">
+
+<!-- ======================= SKY BACKGROUND ======================= -->
+<div id="sky-bg" aria-hidden="true">
+  <div class="cloud-layer layer-far">
+    <div class="bg-cloud c1"></div>
+    <div class="bg-cloud c2"></div>
+    <div class="bg-cloud c3 tint-pink"></div>
+    <div class="bg-cloud c4"></div>
+  </div>
+  <div class="cloud-layer layer-mid">
+    <div class="bg-cloud c5"></div>
+    <div class="bg-cloud c6 tint-pink"></div>
+    <div class="bg-cloud c7"></div>
+  </div>
+  <div class="cloud-layer layer-near">
+    <div class="bg-cloud c8"></div>
+    <div class="bg-cloud c9"></div>
+  </div>
+  <div id="rainbow"></div>
+  <div id="sparkle-field"></div>
+  <div id="confetti-field"></div>
+</div>
+
+<!-- ======================= HEADER ======================= -->
+<header id="app-header">
+  <div class="header-left">
+    <h1 class="logo">Dreamcast<svg class="logo-star" viewBox="0 0 20 20" width="16" height="16"><path d="M10 1 L12 8 L19 10 L12 12 L10 19 L8 12 L1 10 L8 8 Z" fill="url(#logoStarGrad)"/><defs><linearGradient id="logoStarGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F77FBE"/><stop offset="1" stop-color="#8E97E8"/></linearGradient></defs></svg></h1>
+  </div>
+
+  <div class="header-center">
+    <div class="filter-row">
+      <div class="chip-group" id="scope-filter" role="group" aria-label="Scope filter">
+        <button class="chip" data-scope="all">All</button>
+        <button class="chip" data-scope="personal">✿ Personal</button>
+        <button class="chip" data-scope="professional">✦ Professional</button>
+      </div>
+      <div class="chip-group" id="horizon-filter" role="group" aria-label="Horizon filter">
+        <button class="chip" data-horizon="all">All</button>
+        <button class="chip" data-horizon="short">Short</button>
+        <button class="chip" data-horizon="mid">Mid</button>
+        <button class="chip" data-horizon="long">Long</button>
+        <button class="chip" data-horizon="someday">Someday</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <div class="chip-group" id="category-filter" role="group" aria-label="Category filter"></div>
+      <button class="chip sort-toggle" id="sort-toggle" title="Toggle sort mode">Momentum ✦</button>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <a href="#" id="gallery-link" class="gallery-link">Caught dreams ✦ <span id="gallery-count">0</span></a>
+
+    <button id="jar-button" class="jar-button" aria-label="Bubble jar — open caught dreams">
+      <svg id="jar-svg" viewBox="0 0 48 60" width="38" height="46" aria-hidden="true">
+        <defs>
+          <linearGradient id="jarGlass" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#FFFFFF" stop-opacity=".7"/>
+            <stop offset="1" stop-color="#C3A6F1" stop-opacity=".38"/>
+          </linearGradient>
+          <radialGradient id="orbTiny" cx=".35" cy=".3" r=".9">
+            <stop offset="0" stop-color="#FFFFFF"/>
+            <stop offset=".55" stop-color="#FBD3E9"/>
+            <stop offset="1" stop-color="#8E97E8"/>
+          </radialGradient>
+          <radialGradient id="orbPink" cx=".35" cy=".3" r=".9">
+            <stop offset="0" stop-color="#FFFFFF"/>
+            <stop offset=".5" stop-color="#F77FBE"/>
+            <stop offset="1" stop-color="#8E97E8"/>
+          </radialGradient>
+          <radialGradient id="orbBig" cx=".35" cy=".3" r=".9">
+            <stop offset="0" stop-color="#FFFFFF"/>
+            <stop offset=".4" stop-color="#FBD3E9"/>
+            <stop offset=".7" stop-color="#C3A6F1"/>
+            <stop offset="1" stop-color="#6FA8DC"/>
+          </radialGradient>
+        </defs>
+        <!-- cork lid -->
+        <path d="M16 3 Q16 1 18 1 L30 1 Q32 1 32 3 L32 9 L16 9 Z" fill="#D9A972" stroke="#2B2440" stroke-width="1.4"/>
+        <path d="M18 4 Q24 6 30 4" fill="none" stroke="#B8854E" stroke-width="1"/>
+        <path d="M20 7 Q24 8.2 28 7" fill="none" stroke="#B8854E" stroke-width=".8"/>
+        <!-- screw rim -->
+        <rect x="13" y="9" width="22" height="6" rx="2" fill="url(#jarGlass)" stroke="#2B2440" stroke-width="1.5"/>
+        <line x1="15" y1="11" x2="33" y2="11" stroke="#FFFFFF" stroke-width="1" opacity=".7"/>
+        <line x1="15" y1="13" x2="33" y2="13" stroke="#8E97E8" stroke-width=".8" opacity=".5"/>
+        <!-- body: shoulder → straight glass sides → rounded bottom -->
+        <path d="M14 15 L34 15 L34 17 Q40 20 40 27 L40 48 Q40 56 32 57 L16 57 Q8 56 8 48 L8 27 Q8 20 14 17 Z"
+              fill="url(#jarGlass)" stroke="#2B2440" stroke-width="1.6" stroke-linejoin="round"/>
+        <!-- star etch -->
+        <path d="M24 24 L25.3 28 L29 29 L25.3 30 L24 34 L22.7 30 L19 29 L22.7 28 Z" fill="#FFFFFF" opacity=".55"/>
+        <g id="jar-orbs"></g>
+        <!-- glass highlights (over the orbs, so it reads as glass) -->
+        <path d="M11.5 22 Q10 32 11 46" fill="none" stroke="#FFFFFF" stroke-width="1.8" opacity=".75" stroke-linecap="round"/>
+        <path d="M36.5 24 Q37.5 34 36.5 44" fill="none" stroke="#FFFFFF" stroke-width="1" opacity=".45" stroke-linecap="round"/>
+      </svg>
+      <span id="jar-overflow" class="jar-overflow" hidden></span>
+    </button>
+
+    <button id="mute-toggle" class="icon-button" aria-label="Toggle sound">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M12 3 Q13 3 13 4.5 Q13 6 14.5 7.5 Q17 9.5 17 13 L18.5 16 Q19 17 18 17 L6 17 Q5 17 5.5 16 L7 13 Q7 9.5 9.5 7.5 Q11 6 11 4.5 Q11 3 12 3 Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+        <path d="M10 19 Q12 21 14 19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <line class="mute-slash" x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <div class="settings-wrap">
+      <button id="settings-button" class="icon-button" aria-label="Settings" aria-haspopup="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          <path d="M12 2.5 L13.2 5.5 L16.5 4.5 L16.8 8 L20.2 8.8 L18.5 12 L20.2 15.2 L16.8 16 L16.5 19.5 L13.2 18.5 L12 21.5 L10.8 18.5 L7.5 19.5 L7.2 16 L3.8 15.2 L5.5 12 L3.8 8.8 L7.2 8 L7.5 4.5 L10.8 5.5 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div id="settings-menu" class="settings-menu" hidden>
+        <button id="menu-categories">Categories…</button>
+        <button id="menu-export">Export my dreams</button>
+        <button id="menu-import">Import…</button>
+        <button id="menu-archived">Archived dreams</button>
+        <input type="file" id="import-file" accept=".json,application/json" hidden>
+      </div>
+    </div>
+
+    <button id="add-dream" class="cta-button">＋ Catch a new dream</button>
+  </div>
+</header>
+
+<main id="main-view">
+  <!-- ======================= HORIZON (someday) ======================= -->
+  <section id="horizon" aria-label="Someday dreams on the horizon">
+    <div class="horizon-sun"></div>
+    <div id="horizon-bubbles"></div>
+  </section>
+
+  <!-- ======================= TODAY & THIS WEEK TRAY ======================= -->
+  <section id="tray" aria-label="Short-term goals">
+    <div class="tray-group" data-cadence="today">
+      <div class="tray-group-head"><h2>Today</h2><span class="caught-count" id="caught-today"></span></div>
+      <ul class="tray-list" id="tray-today"></ul>
+      <form class="quick-add" data-cadence="today"><input type="text" placeholder="＋ quick goal…" aria-label="Add a goal for today" maxlength="120"></form>
+    </div>
+    <div class="tray-divider"></div>
+    <div class="tray-group" data-cadence="this-week">
+      <div class="tray-group-head"><h2>This Week</h2><span class="caught-count" id="caught-week"></span></div>
+      <ul class="tray-list" id="tray-week"></ul>
+      <form class="quick-add" data-cadence="this-week"><input type="text" placeholder="＋ quick goal…" aria-label="Add a goal for this week" maxlength="120"></form>
+    </div>
+  </section>
+
+  <!-- ======================= THE SKY (mid/long cards) ======================= -->
+  <section id="sky-field" aria-label="Active dreams">
+    <div id="julia-perch">
+      <!-- ==== Julia in her dream bubble, fishing ==== -->
+      <svg id="julia-avatar" viewBox="0 0 250 290" width="225" height="261" aria-label="Julia in a dream bubble, fishing for dreams">
+        <defs>
+          <linearGradient id="rodGrad" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#F77FBE"/>
+            <stop offset="1" stop-color="#8E97E8"/>
+          </linearGradient>
+          <linearGradient id="bubbleRing" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#F77FBE"/>
+            <stop offset=".5" stop-color="#C3A6F1"/>
+            <stop offset="1" stop-color="#6FA8DC"/>
+          </linearGradient>
+          <radialGradient id="bubbleSheen" cx=".5" cy=".5" r=".5">
+            <stop offset=".78" stop-color="#FFFFFF" stop-opacity="0"/>
+            <stop offset=".94" stop-color="#FFFFFF" stop-opacity=".5"/>
+            <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="2.2" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- cloud seat -->
+        <g id="cloud-seat">
+          <ellipse cx="128" cy="248" rx="88" ry="26" fill="#FFFFFF" opacity=".95"/>
+          <ellipse cx="70" cy="238" rx="34" ry="20" fill="#FFFFFF"/>
+          <ellipse cx="120" cy="230" rx="44" ry="24" fill="#FFFFFF"/>
+          <ellipse cx="178" cy="236" rx="36" ry="21" fill="#FFFFFF"/>
+          <ellipse cx="128" cy="252" rx="80" ry="20" fill="#E4E0FA" opacity=".55"/>
+        </g>
+
+        <g id="julia">
+          <!-- the rod casts from behind her bubble; #rod-tip anchors the line -->
+          <g id="rig">
+            <g id="rod">
+              <path d="M104 178 Q64 120 30 52" fill="none" stroke="url(#rodGrad)" stroke-width="4.5" stroke-linecap="round"/>
+              <path d="M104 178 Q64 120 30 52" fill="none" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity=".5"/>
+              <path d="M63 122 L60 132" stroke="#FFD98E" stroke-width="1.4"/>
+              <path d="M60 132 l1.6 3.4 3.4 1.6 -3.4 1.6 -1.6 3.4 -1.6 -3.4 -3.4 -1.6 3.4 -1.6 Z" fill="#FFD98E" stroke="#2B2440" stroke-width="1.2"/>
+              <circle id="rod-tip" cx="30" cy="52" r="1.5" fill="none" opacity="0"/>
+            </g>
+          </g>
+
+          <!-- soft shadow where the bubble rests on the cloud -->
+          <ellipse cx="128" cy="220" rx="46" ry="8" fill="#8E97E8" opacity=".22"/>
+
+          <!-- the dream bubble with her cartoon portrait -->
+          <circle cx="128" cy="148" r="66" fill="#FFFFFF" opacity=".4"/>
+          <image href="assets/julia-cartoon.png" x="65" y="85" width="126" height="126"/>
+          <circle cx="128" cy="148" r="63" fill="url(#bubbleSheen)"/>
+          <circle cx="128" cy="148" r="65" fill="none" stroke="url(#bubbleRing)" stroke-width="3" opacity=".9" filter="url(#softGlow)"/>
+          <path d="M86 112 Q96 96 114 90" fill="none" stroke="#FFFFFF" stroke-width="4" opacity=".75" stroke-linecap="round"/>
+
+          <!-- little sparkles orbiting the bubble -->
+          <path d="M196 110 l1.6 3.4 3.4 1.6 -3.4 1.6 -1.6 3.4 -1.6 -3.4 -3.4 -1.6 3.4 -1.6 Z" fill="#FFD98E" filter="url(#softGlow)"/>
+          <path d="M58 176 l1.3 2.8 2.8 1.3 -2.8 1.3 -1.3 2.8 -1.3 -2.8 -2.8 -1.3 2.8 -1.3 Z" fill="#F9A8C9" filter="url(#softGlow)"/>
+          <path d="M186 190 l1.1 2.4 2.4 1.1 -2.4 1.1 -1.1 2.4 -1.1 -2.4 -2.4 -1.1 2.4 -1.1 Z" fill="#FFFFFF" opacity=".9"/>
+        </g>
+      </svg>
+    </div>
+    <div id="cards-grid"></div>
+    <div id="sky-empty" class="empty-state" hidden>
+      <svg viewBox="0 0 120 70" width="120" aria-hidden="true">
+        <ellipse cx="40" cy="45" rx="28" ry="16" fill="#FFFFFF" opacity=".95"/>
+        <ellipse cx="70" cy="40" rx="26" ry="18" fill="#FFFFFF"/>
+        <ellipse cx="90" cy="48" rx="20" ry="12" fill="#FFFFFF" opacity=".9"/>
+        <circle cx="60" cy="40" r="2" fill="#2B2440"/><circle cx="74" cy="40" r="2" fill="#2B2440"/>
+        <path d="M62 48 Q67 51 72 48" stroke="#2B2440" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      </svg>
+      <p>No dreams in this corner of the sky yet.</p>
+    </div>
+  </section>
+
+  <!-- ======================= RECENTLY TOUCHED ======================= -->
+  <section id="recent-strip" aria-label="Recently touched dreams">
+    <span class="recent-label">Recently touched ✦</span>
+    <div id="recent-chips"></div>
+  </section>
+</main>
+
+<!-- ======================= CAUGHT DREAMS GALLERY ======================= -->
+<section id="gallery-view" hidden>
+  <div class="gallery-head">
+    <button id="gallery-back" class="chip">← Back to the sky</button>
+    <h2>Caught Dreams ✦</h2>
+  </div>
+  <div id="gallery-shelf"></div>
+  <div id="gallery-empty" class="empty-state" hidden>
+    <p>No dreams caught yet — but the sky is full of them. ✦</p>
+  </div>
+</section>
+
+<!-- fishing line overlay (never intercepts pointer) -->
+<svg id="fishing-overlay" aria-hidden="true">
+  <defs>
+    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFD98E"/>
+    </linearGradient>
+    <filter id="moonGlow" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="3.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <path id="fish-line" fill="none" stroke="url(#lineGrad)" stroke-width="1.6" opacity="0"/>
+  <g id="moon-hook" opacity="0" filter="url(#moonGlow)">
+    <path d="M0 -9 Q9 -8 10 2 Q3 -1 -2 5 Q-3 -4 0 -9 Z" fill="#FFD98E" stroke="#B8854E" stroke-width="1"/>
+  </g>
+</svg>
+
+<div id="orb-layer" aria-hidden="true"></div>
+<div id="modal-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
