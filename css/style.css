@@ -438,6 +438,38 @@ body[data-sparkle="3"] .bg-cloud {
 }
 .tray-check:hover { border-color: var(--pink); background: var(--pink-soft); }
 .tray-pill .pill-title { font-size: 13px; font-weight: 700; }
+
+/* importance star: ★ most → ☆ normal → ▾ least */
+.imp-star {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+  color: rgba(142, 151, 232, .55);
+  transition: color .2s, transform .15s;
+}
+.imp-star:hover { transform: scale(1.25); color: var(--gold); }
+.tray-pill.imp-high .imp-star { color: #E8A93C; text-shadow: 0 0 6px rgba(255, 217, 142, .8); }
+.tray-pill.imp-low .imp-star { color: rgba(142, 151, 232, .7); }
+
+.tray-pill.imp-high {
+  box-shadow: 0 4px 14px rgba(232, 169, 60, .35);
+  border: 1.5px solid rgba(255, 217, 142, .8);
+}
+.tray-pill.imp-low { opacity: .68; }
+
+.pill-time {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--periwinkle);
+  background: rgba(142, 151, 232, .14);
+  border-radius: 999px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.tray-pill.overdue .pill-time { color: #C0446E; background: rgba(247, 127, 190, .18); }
+.tray-pill.overdue { border: 1.5px solid rgba(247, 127, 190, .55); }
 .pill-link-glyph { font-size: 11px; color: var(--blue); }
 .tray-pill .cat-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
 .tray-pill .scope-glyph { font-size: 11px; opacity: .75; }
@@ -890,7 +922,7 @@ body[data-sparkle="3"] .bg-cloud {
 
 .field { margin: 12px 0; }
 .field label { display: block; font-size: 12px; font-weight: 800; margin-bottom: 5px; color: var(--periwinkle); text-transform: uppercase; letter-spacing: .05em; }
-.field input[type=text], .field input[type=date], .field textarea, .field select {
+.field input[type=text], .field input[type=date], .field input[type=time], .field textarea, .field select {
   width: 100%;
   border: 1.5px solid rgba(142,151,232,.4);
   border-radius: 14px;

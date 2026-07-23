@@ -68,6 +68,8 @@ export function makeDream(partial = {}) {
     color: null,              // null → category default
     milestones: [],
     links: [],                // [{ id, title, url }] — resources nested in the card
+    importance: null,         // 'high' | null | 'low' — short-goal priority star
+    dueTime: null,            // 'HH:MM' — optional time-bound deadline for short goals
     manualPercent: null,      // used only when no milestones
     targetDate: null,
     pinned: false,
@@ -192,7 +194,11 @@ function migrate(raw) {
   if (!raw.version) raw.version = 1;
   // v1 in-place upgrades for fields added after first release
   if (Array.isArray(raw.dreams)) {
-    raw.dreams.forEach(d => { if (!Array.isArray(d.links)) d.links = []; });
+    raw.dreams.forEach(d => {
+      if (!Array.isArray(d.links)) d.links = [];
+      if (d.importance === undefined) d.importance = null;
+      if (d.dueTime === undefined) d.dueTime = null;
+    });
   }
   // future: if (raw.version === 1) { ...upgrade...; raw.version = 2; }
   return raw;

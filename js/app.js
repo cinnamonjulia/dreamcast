@@ -154,8 +154,32 @@ function renderHorizon() {
 /* ---------- tray (short-term) ---------- */
 
 function shortGoals(cadence) {
-  return state.dreams.filter(d =>
-    d.status === 'active' && d.horizon === 'short' && d.cadence === cadence && matchesScopeCat(d));
+  const rank = { high: 0, low: 2 };
+  return state.dreams
+    .filter(d => d.status === 'active' && d.horizon === 'short' && d.cadence === cadence && matchesScopeCat(d))
+    .sort((a, b) =>
+      ((rank[a.importance] ?? 1) - (rank[b.importance] ?? 1)) ||
+      ((a.dueTime || '99:99') > (b.dueTime || '99:99') ? 1 : (a.dueTime || '99:99') < (b.dueTime || '99:99') ? -1 : 0) ||
+      (new Date(a.createdAt) - new Date(b.createdAt)));
+}
+
+function formatTime(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const suffix = h >= 12 ? 'pm' : 'am';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${suffix}`;
+}
+
+function isOverdue(d) {
+  if (d.cadence !== 'today' || !d.dueTime) return false;
+  const now = new Date();
+  const [h, m] = d.dueTime.split(':').map(Number);
+  return now.getHours() * 60 + now.getMinutes() > h * 60 + m;
+}
+
+function cycleImportance(d) {
+  d.importance = d.importance === null ? 'high' : d.importance === 'high' ? 'low' : null;
+  touch(d); persist(); sounds.tick(); renderAll();
 }
 
 function caughtCount(cadence, sinceFn) {
@@ -188,11 +212,25 @@ function renderTray() {
 
 function renderTrayPill(d) {
   const cat = categoryOf(state, d);
-  const pill = h('li', { class: 'tray-pill', 'data-id': d.id },
+  const impLabel = d.importance === 'high' ? 'most important'
+    : d.importance === 'low' ? 'least important' : 'normal importance';
+  const pill = h('li', {
+    class: 'tray-pill'
+      + (d.importance === 'high' ? ' imp-high' : d.importance === 'low' ? ' imp-low' : '')
+      + (isOverdue(d) ? ' overdue' : ''),
+    'data-id': d.id,
+  },
     h('button', {
       class: 'tray-check',
       'aria-label': `Complete: ${d.title}`,
       onclick: e => { e.stopPropagation(); completeQuickGoal(d.id, pill); },
+    }),
+    h('button', {
+      class: 'imp-star',
+      'aria-label': `${d.title}: ${impLabel} — click to change`,
+      title: `Importance: ${impLabel}`,
+      text: d.importance === 'high' ? '★' : d.importance === 'low' ? '▾' : '☆',
+      onclick: e => { e.stopPropagation(); cycleImportance(d); },
     }),
     h('span', { class: 'cat-dot', style: `background:${cat?.color || '#C3A6F1'}` }),
     h('button', {
@@ -200,6 +238,7 @@ function renderTrayPill(d) {
       text: d.title,
       onclick: () => openQuickGoalModal(d.id),
     }),
+    d.dueTime ? h('span', { class: 'pill-time', text: formatTime(d.dueTime) }) : null,
     d.linkedDreamId ? h('span', { class: 'pill-link-glyph', title: 'Feeds a bigger dream', text: '☁️' }) : null,
     h('span', { class: 'scope-glyph', text: d.scope === 'personal' ? '✿' : '✦' }),
   );
@@ -810,9 +849,25 @@ function openQuickGoalModal(id) {
       h('label', { text: 'Title' }),
       h('input', { type: 'text', value: d.title, maxlength: '120', oninput: e => { d.title = e.target.value; touch(d); persist(); renderAll(); } }),
     ),
+    h('div', { class: 'field-row' },
+      h('div', { class: 'field' },
+        h('label', { text: 'When' }),
+        radioPills('qg-cadence', [['today', 'Today'], ['this-week', 'This week']], d.cadence, v => { d.cadence = v; touch(d); persist(); renderAll(); }),
+      ),
+      h('div', { class: 'field' },
+        h('label', { text: 'By what time? (optional)' }),
+        h('input', {
+          type: 'time', value: d.dueTime || '',
+          onchange: e => { d.dueTime = e.target.value || null; touch(d); persist(); renderAll(); },
+        }),
+      ),
+    ),
     h('div', { class: 'field' },
-      h('label', { text: 'When' }),
-      radioPills('qg-cadence', [['today', 'Today'], ['this-week', 'This week']], d.cadence, v => { d.cadence = v; touch(d); persist(); renderAll(); }),
+      h('label', { text: 'Importance' }),
+      radioPills('qg-importance',
+        [['high', '★ Most important'], ['normal', 'Normal'], ['low', '▾ Least important']],
+        d.importance || 'normal',
+        v => { d.importance = v === 'normal' ? null : v; touch(d); persist(); renderAll(); }),
     ),
     h('div', { class: 'field-row' },
       h('div', { class: 'field' },
