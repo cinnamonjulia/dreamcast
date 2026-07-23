@@ -305,12 +305,31 @@ function applyCardFilters() {
   $('#sky-empty').hidden = visible > 0;
 }
 
-/* 7 cartoon cloud silhouettes: puffy cumulus for personal, flat stratus for work */
+/* 7 real cloud silhouettes: puffy cumulus for personal, flat stratus for work.
+   Each is a full outline (bumps on every edge) stretched behind the card. */
+const CLOUD_PATHS = {
+  'cloud-cumulus-1': 'M14 100 Q6 66 40 58 Q46 26 92 30 Q118 6 162 14 Q206 4 228 32 Q272 26 278 62 Q296 78 288 108 Q296 142 262 156 Q248 186 204 180 Q170 198 130 186 Q88 196 62 176 Q22 172 18 140 Q4 122 14 100 Z',
+  'cloud-cumulus-2': 'M16 106 Q4 74 36 62 Q40 30 84 34 Q104 2 152 10 Q198 0 224 28 Q268 24 274 58 Q298 74 288 106 Q298 140 260 152 Q244 184 198 178 Q160 198 118 184 Q76 194 54 172 Q16 168 14 138 Q2 122 16 106 Z',
+  'cloud-cumulus-3': 'M20 110 Q8 70 48 60 Q58 24 108 26 Q158 4 204 26 Q252 22 262 62 Q292 76 284 112 Q290 146 252 158 Q228 188 178 180 Q132 196 96 180 Q54 186 38 158 Q6 148 20 110 Z',
+  'cloud-cumulus-4': 'M18 112 Q8 82 40 72 Q36 44 76 40 Q88 12 134 18 Q178 6 200 34 Q242 32 248 66 Q286 70 282 104 Q294 138 256 152 Q240 182 196 176 Q158 196 118 182 Q78 192 56 170 Q20 166 20 138 Q6 124 18 112 Z',
+  'cloud-stratus-1': 'M10 64 Q2 34 46 26 Q108 6 172 18 Q240 8 270 28 Q298 40 290 72 Q298 108 288 138 Q294 170 248 176 Q182 194 118 184 Q56 192 28 170 Q2 160 10 128 Q2 94 10 64 Z',
+  'cloud-stratus-2': 'M8 72 Q4 44 48 38 Q120 22 196 32 Q258 24 284 44 Q298 58 290 84 Q300 118 288 144 Q292 168 246 172 Q176 186 104 178 Q46 184 20 164 Q0 152 8 122 Q0 96 8 72 Z',
+  'cloud-stratus-3': 'M12 68 Q6 40 52 34 Q116 14 184 26 Q250 18 276 38 Q300 50 292 80 Q300 112 290 140 Q296 168 250 174 Q186 190 116 180 Q52 188 24 166 Q0 154 12 124 Q4 96 12 68 Z',
+};
+
 function cloudTypeOf(d) {
   const hash = [...d.id].reduce((a, ch) => a + ch.charCodeAt(0), 0);
   return d.scope === 'professional'
     ? `cloud-stratus-${(hash % 3) + 1}`
     : `cloud-cumulus-${(hash % 4) + 1}`;
+}
+
+function cloudShapeEl(type) {
+  return h('div', {
+    class: 'cloud-shape-wrap',
+    'aria-hidden': 'true',
+    html: `<svg class="cloud-shape" viewBox="0 0 300 200" preserveAspectRatio="none"><path d="${CLOUD_PATHS[type]}"/></svg>`,
+  });
 }
 
 function linkHost(url) {
@@ -334,7 +353,7 @@ function renderCard(d) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDreamModal(d.id); }
     },
   },
-    h('div', { class: 'cloud-bumps', 'aria-hidden': 'true' }, h('span'), h('span'), h('span'), h('span'), h('span')),
+    cloudShapeEl(cloudTypeOf(d)),
     h('button', {
       class: 'pin-star' + (d.pinned ? ' pinned' : ''),
       'aria-label': d.pinned ? 'Unpin dream' : 'Pin dream',
