@@ -557,6 +557,15 @@ body[data-sparkle="3"] .bg-cloud {
 /* stratus cards are flatter — slightly tighter padding */
 .dream-card[class*="cloud-stratus"] { padding: 36px 38px 26px; }
 
+/* long-term dreams sit higher and read farther away than mid-term ones */
+.dream-card.h-long {
+  transform: translateY(calc(var(--ty, 0px) - 16px)) rotate(var(--rot, 0deg)) scale(.93);
+  opacity: .92;
+}
+.dream-card.h-long .cloud-shape { filter: drop-shadow(0 8px 16px rgba(142, 151, 232, .3)); }
+.dream-card.h-long:hover .cloud-shape { filter: drop-shadow(0 16px 34px rgba(142, 151, 232, .6)); }
+.horizon-tag.tag-long { background: rgba(195, 166, 241, .28); color: #8A63C9; }
+
 /* cloud type classes (cloud-cumulus-1..4, cloud-stratus-1..3) pick the
    silhouette path in JS — see CLOUD_PATHS in app.js */
 

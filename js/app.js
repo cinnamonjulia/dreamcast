@@ -13,7 +13,7 @@ import {
 import {
   REDUCED, setMuteSource, initAudioOnGesture, sounds,
   startIdleLife, startAmbientSky, perkUp, happyBounce,
-  castToCard, reelIn, milestoneCatch, miniCatch,
+  castTo, castToCard, reelIn, milestoneCatch, miniCatch,
   achievedCelebration, newDreamCast, sparkleTrail, confettiBurst,
   randomizeFloat,
 } from './animations.js';
@@ -32,7 +32,39 @@ function setChildren(el, ...kids) {
 /* Cache per-dream float randomization so re-renders don't make cards jump. */
 const floatCache = new Map();
 
-function persist() { saveState(state); }
+/* Merge another tab's saved state into ours: per dream, freshest lastTouchedAt wins.
+   Protects against a stale tab overwriting work done here. */
+let lastSync = Date.now();
+
+function mergeDisk(onDisk) {
+  if (!onDisk || !Array.isArray(onDisk.dreams)) return;
+  const ours = new Map(state.dreams.map(d => [d.id, d]));
+  for (const disk of onDisk.dreams) {
+    const mine = ours.get(disk.id);
+    const diskTouched = new Date(disk.lastTouchedAt || 0).getTime();
+    if (!mine) {
+      // unknown dream: adopt it only if touched since our last sync (i.e. created
+      // in another tab) — otherwise it's one we deliberately deleted here
+      if (diskTouched > lastSync - 2000) state.dreams.push(disk);
+    } else if (diskTouched > new Date(mine.lastTouchedAt || 0).getTime()) {
+      Object.assign(mine, disk);
+    }
+  }
+  if (Array.isArray(onDisk.jar) && onDisk.jar.length > state.jar.length) state.jar = onDisk.jar;
+  if (Array.isArray(onDisk.weeklyActivity)) {
+    for (const wa of onDisk.weeklyActivity) {
+      const mine = state.weeklyActivity.find(w => w.weekKey === wa.weekKey);
+      if (!mine) state.weeklyActivity.push(wa);
+      else mine.count = Math.max(mine.count, wa.count);
+    }
+  }
+}
+
+function persist() {
+  try { mergeDisk(JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')); } catch { /* disk unreadable — our state wins */ }
+  lastSync = Date.now();
+  saveState(state);
+}
 
 function touch(dream) { dream.lastTouchedAt = new Date().toISOString(); }
 
@@ -315,12 +347,13 @@ const CLOUD_PATHS = {
   'cloud-stratus-1': 'M10 64 Q2 34 46 26 Q108 6 172 18 Q240 8 270 28 Q298 40 290 72 Q298 108 288 138 Q294 170 248 176 Q182 194 118 184 Q56 192 28 170 Q2 160 10 128 Q2 94 10 64 Z',
   'cloud-stratus-2': 'M8 72 Q4 44 48 38 Q120 22 196 32 Q258 24 284 44 Q298 58 290 84 Q300 118 288 144 Q292 168 246 172 Q176 186 104 178 Q46 184 20 164 Q0 152 8 122 Q0 96 8 72 Z',
   'cloud-stratus-3': 'M12 68 Q6 40 52 34 Q116 14 184 26 Q250 18 276 38 Q300 50 292 80 Q300 112 290 140 Q296 168 250 174 Q186 190 116 180 Q52 188 24 166 Q0 154 12 124 Q4 96 12 68 Z',
+  'cloud-stratus-4': 'M10 76 Q0 48 44 42 Q104 26 168 34 Q236 24 268 42 Q300 52 292 82 Q302 116 290 142 Q296 166 252 172 Q192 188 124 180 Q60 188 30 168 Q2 158 12 128 Q2 100 10 76 Z',
 };
 
 function cloudTypeOf(d) {
   const hash = [...d.id].reduce((a, ch) => a + ch.charCodeAt(0), 0);
   return d.scope === 'professional'
-    ? `cloud-stratus-${(hash % 3) + 1}`
+    ? `cloud-stratus-${(hash % 4) + 1}`
     : `cloud-cumulus-${(hash % 4) + 1}`;
 }
 
@@ -343,7 +376,7 @@ function renderCard(d) {
   const next = nextMilestone(d);
 
   const card = h('article', {
-    class: 'dream-card ' + cloudTypeOf(d) + (d.pinned ? ' pinned-card' : ''),
+    class: 'dream-card ' + cloudTypeOf(d) + ` h-${d.horizon}` + (d.pinned ? ' pinned-card' : ''),
     'data-id': d.id,
     tabindex: '0',
     role: 'button',
@@ -364,7 +397,7 @@ function renderCard(d) {
       h('span', { class: 'cat-ribbon', style: `background:${cat?.color || color}`, title: cat?.name || '' }),
       h('h3', { class: 'card-title', text: d.title }),
       h('span', { class: 'scope-glyph', title: d.scope, text: d.scope === 'personal' ? '✿' : '✦' }),
-      h('span', { class: 'horizon-tag', text: d.horizon === 'mid' ? 'Mid' : 'Long' }),
+      h('span', { class: 'horizon-tag' + (d.horizon === 'long' ? ' tag-long' : ''), text: d.horizon === 'mid' ? 'Mid' : 'Long' }),
     ),
     d.why ? h('p', { class: 'card-why', text: d.why }) : null,
     h('div', { class: 'progress-row' },
@@ -1036,6 +1069,20 @@ function openNewDreamModal() {
           closeModal();
           renderAll();
           happyBounce();
+          if (dream.status === 'someday') {
+            // catch it onto the far horizon: cast at the new bubble, reel, sparkle
+            const bubble = [...document.querySelectorAll('.horizon-bubble')]
+              .find(b => (b.getAttribute('aria-label') || '').includes(dream.title));
+            if (bubble && !REDUCED) {
+              const r = bubble.getBoundingClientRect();
+              castTo(r.x + r.width / 2, r.y + r.height + 22);
+              setTimeout(() => {
+                reelIn();
+                sparkleTrail(document.getElementById('julia-avatar'), bubble);
+                happyBounce();
+              }, 900);
+            }
+          }
           // open the full editor for mid/long so milestones can be added right away
           if (dream.horizon === 'mid' || dream.horizon === 'long') openDreamModal(dream.id);
         },
@@ -1419,12 +1466,12 @@ function init() {
     }
   }, 60000);
 
-  // another tab saved — adopt its state so we never clobber it with ours
+  // another tab saved — merge its changes in (freshest edit per dream wins)
   window.addEventListener('storage', e => {
-    if (e.key === STORAGE_KEY && e.newValue) {
-      state = loadState();
-      renderAll();
-    }
+    if (e.key !== STORAGE_KEY || !e.newValue) return;
+    try { mergeDisk(JSON.parse(e.newValue)); } catch { /* ignore malformed writes */ }
+    lastSync = Date.now();
+    renderAll();
   });
 }
 
