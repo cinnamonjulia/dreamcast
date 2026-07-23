@@ -984,7 +984,7 @@ function openNewDreamModal() {
   renderFields();
 
   openModal(h('div', {},
-    h('h2', { text: 'Catch a new dream ✦' }),
+    h('h2', { text: 'Cast a new dream ✦' }),
     h('div', { class: 'field' },
       h('label', { text: 'How far away is it?' }),
       radioPills('nd-horizon',
