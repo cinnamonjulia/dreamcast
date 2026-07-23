@@ -3,6 +3,7 @@
    ============================================================ */
 
 import {
+  STORAGE_KEY,
   loadState, saveState, exportState, parseImport, defaultState,
   makeDream, makeCategory, uuid, todayISO, weekKey,
   dreamProgress, nextMilestone, dreamColor, categoryOf, daysAgo,
@@ -1398,6 +1399,14 @@ function init() {
       renderAll();
     }
   }, 60000);
+
+  // another tab saved — adopt its state so we never clobber it with ours
+  window.addEventListener('storage', e => {
+    if (e.key === STORAGE_KEY && e.newValue) {
+      state = loadState();
+      renderAll();
+    }
+  });
 }
 
 init();
