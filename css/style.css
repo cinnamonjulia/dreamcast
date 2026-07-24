@@ -462,8 +462,9 @@ body[data-sparkle="3"] .bg-cloud {
 }
 .tray-pill.imp-low { opacity: .68; }
 
-/* personal short-term goals wear the deepest pink (cool rose, not coral) */
+/* short-term goals wear the deepest shade: cool rose for personal, blue for work */
 .tray-pill.pill-personal { background: rgba(233, 126, 199, .92); }
+.tray-pill.pill-professional { background: rgba(110, 155, 224, .92); }
 
 .pill-time {
   font-size: 10.5px;
@@ -604,10 +605,13 @@ body[data-sparkle="3"] .bg-cloud {
   100% { transform: translateY(40px); opacity: 0; }
 }
 
-/* long-term dreams sit higher and read farther away than mid-term ones */
+/* long-term dreams sit higher, smaller & farther; mid-term loom bigger below */
 .dream-card.h-long {
-  transform: translateY(calc(var(--ty, 0px) - 16px)) rotate(var(--rot, 0deg)) scale(.93);
+  transform: translateY(calc(var(--ty, 0px) - 16px)) rotate(var(--rot, 0deg)) scale(.88);
   opacity: .92;
+}
+.dream-card.h-mid {
+  transform: translateY(var(--ty, 0px)) rotate(var(--rot, 0deg)) scale(1.03);
 }
 .dream-card.h-long .cloud-shape { filter: drop-shadow(0 8px 16px rgba(142, 151, 232, .3)); }
 .dream-card.h-long:hover .cloud-shape { filter: drop-shadow(0 16px 34px rgba(142, 151, 232, .6)); }

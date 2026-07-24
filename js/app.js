@@ -291,7 +291,7 @@ function renderTrayPill(d) {
     : d.importance === 'low' ? 'least important' : 'normal importance';
   const pill = h('li', {
     class: 'tray-pill'
-      + (d.scope === 'personal' ? ' pill-personal' : '')
+      + (d.scope === 'personal' ? ' pill-personal' : ' pill-professional')
       + (d.importance === 'high' ? ' imp-high' : d.importance === 'low' ? ' imp-low' : '')
       + (isOverdue(d) ? ' overdue' : ''),
     'data-id': d.id,
@@ -421,6 +421,10 @@ const PERSONAL_PINK = {
   mid: 'rgba(240, 150, 209, .9)',   // deeper cool rose — nearer term
   long: 'rgba(248, 213, 237, .88)', // pale cool pink — far away
 };
+const PROFESSIONAL_BLUE = {
+  mid: 'rgba(126, 168, 230, .9)',   // deeper blue — nearer term
+  long: 'rgba(206, 224, 246, .88)', // pale blue — far away
+};
 const NEGLECT_DAYS = 5;
 
 function renderCard(d) {
@@ -488,7 +492,9 @@ function renderCard(d) {
   );
 
   card.style.setProperty('--tint',
-    d.scope === 'personal' ? (PERSONAL_PINK[d.horizon] || PERSONAL_PINK.mid) : tintOf(color));
+    d.scope === 'personal'
+      ? (PERSONAL_PINK[d.horizon] || PERSONAL_PINK.mid)
+      : (PROFESSIONAL_BLUE[d.horizon] || PROFESSIONAL_BLUE.mid));
 
   // stable float randomization per dream
   if (!floatCache.has(d.id)) {
