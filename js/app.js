@@ -11,7 +11,7 @@ import {
 } from './data.js';
 
 import {
-  syncEnabled, currentUser, sendCode, verifyCode, signOut, pullRemote, pushRemote,
+  syncEnabled, currentUser, sendCode, verifyCode, signOut, pullRemote, pushRemote, onAuth,
 } from './sync.js';
 
 import {
@@ -1604,10 +1604,18 @@ function init() {
 
   // cloud sync: pull on load and whenever the tab comes back into view
   if (syncEnabled()) {
-    currentUser().then(u => {
-      if (u) { pullAndMerge().then(() => schedulePush()); toast(`Synced ✦ signed in as ${u.email}`); }
-      else syncStatus = 'signed-out';
-    });
+    let syncAnnounced = false;
+    const onSignedIn = user => {
+      if (!user) return;
+      pullAndMerge().then(() => schedulePush());
+      if (!syncAnnounced) {
+        syncAnnounced = true;
+        toast(`Synced ✦ signed in as ${user.email}`);
+      }
+    };
+    currentUser().then(u => { if (u) onSignedIn(u); else syncStatus = 'signed-out'; });
+    // catches the moment an emailed sign-in link finishes (avoids racing page load)
+    onAuth((event, session) => { if (event === 'SIGNED_IN') onSignedIn(session?.user); });
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         currentUser().then(u => { if (u) pullAndMerge(); });

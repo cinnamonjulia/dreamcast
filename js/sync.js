@@ -24,6 +24,12 @@ async function getClient() {
   return client;
 }
 
+/** Subscribe to auth changes (fires when an emailed sign-in link completes). */
+export async function onAuth(cb) {
+  const c = await getClient();
+  c.auth.onAuthStateChange((event, session) => cb(event, session));
+}
+
 /** Signed-in user, or null. */
 export async function currentUser() {
   try {
