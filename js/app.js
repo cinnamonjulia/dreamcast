@@ -291,6 +291,7 @@ function renderTrayPill(d) {
     : d.importance === 'low' ? 'least important' : 'normal importance';
   const pill = h('li', {
     class: 'tray-pill'
+      + (d.scope === 'personal' ? ' pill-personal' : '')
       + (d.importance === 'high' ? ' imp-high' : d.importance === 'low' ? ' imp-low' : '')
       + (isOverdue(d) ? ' overdue' : ''),
     'data-id': d.id,
@@ -347,12 +348,16 @@ function completeQuickGoal(id, pillEl) {
 /* ---------- sky (mid/long cards) ---------- */
 
 function skyDreams() {
-  let list = state.dreams.filter(d =>
+  // altitude rule: long-term dreams ride high (top rows), mid-term sit lower
+  const list = state.dreams.filter(d =>
     d.status === 'active' && (d.horizon === 'mid' || d.horizon === 'long'));
-  if (state.settings.sort === 'momentum') {
-    list = [...list].sort((a, b) => new Date(b.lastTouchedAt) - new Date(a.lastTouchedAt));
-  }
-  return [...list.filter(d => d.pinned), ...list.filter(d => !d.pinned)];
+  const altitude = d => (d.horizon === 'long' ? 0 : 1);
+  return [...list].sort((a, b) =>
+    altitude(a) - altitude(b) ||
+    (b.pinned === true) - (a.pinned === true) ||
+    (state.settings.sort === 'momentum'
+      ? new Date(b.lastTouchedAt) - new Date(a.lastTouchedAt)
+      : 0));
 }
 
 function cardVisible(d) {
@@ -411,14 +416,24 @@ function linkHost(url) {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
 }
 
+/* personal dreams are pink; the shorter the horizon, the deeper the shade */
+const PERSONAL_PINK = {
+  mid: 'rgba(246, 158, 196, .9)',   // deeper pink — nearer term
+  long: 'rgba(251, 214, 231, .88)', // pale pink — far away
+};
+const NEGLECT_DAYS = 5;
+
 function renderCard(d) {
   const color = dreamColor(state, d);
   const cat = categoryOf(state, d);
   const pct = dreamProgress(d);
   const next = nextMilestone(d);
+  const daysSinceTouch = Math.floor((Date.now() - new Date(d.lastTouchedAt).getTime()) / 86400000);
+  const neglected = daysSinceTouch >= NEGLECT_DAYS;
 
   const card = h('article', {
-    class: 'dream-card ' + cloudTypeOf(d) + ` h-${d.horizon}` + (d.pinned ? ' pinned-card' : ''),
+    class: 'dream-card ' + cloudTypeOf(d) + ` h-${d.horizon}`
+      + (d.pinned ? ' pinned-card' : '') + (neglected ? ' neglected' : ''),
     'data-id': d.id,
     tabindex: '0',
     role: 'button',
@@ -429,6 +444,9 @@ function renderCard(d) {
     },
   },
     cloudShapeEl(cloudTypeOf(d)),
+    neglected ? h('div', { class: 'rain', 'aria-hidden': 'true' },
+      ...[12, 30, 48, 66, 84].map((left, i) =>
+        h('span', { style: `left:${left}%;animation-delay:${(i * 0.28).toFixed(2)}s` }))) : null,
     h('button', {
       class: 'pin-star' + (d.pinned ? ' pinned' : ''),
       'aria-label': d.pinned ? 'Unpin dream' : 'Pin dream',
@@ -469,7 +487,8 @@ function renderCard(d) {
     ),
   );
 
-  card.style.setProperty('--tint', tintOf(color));
+  card.style.setProperty('--tint',
+    d.scope === 'personal' ? (PERSONAL_PINK[d.horizon] || PERSONAL_PINK.mid) : tintOf(color));
 
   // stable float randomization per dream
   if (!floatCache.has(d.id)) {

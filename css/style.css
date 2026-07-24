@@ -462,6 +462,9 @@ body[data-sparkle="3"] .bg-cloud {
 }
 .tray-pill.imp-low { opacity: .68; }
 
+/* personal short-term goals wear the deepest pink */
+.tray-pill.pill-personal { background: rgba(245, 139, 184, .92); }
+
 .pill-time {
   font-size: 10.5px;
   font-weight: 800;
@@ -559,6 +562,47 @@ body[data-sparkle="3"] .bg-cloud {
 
 /* stratus cards are flatter — slightly tighter padding */
 .dream-card[class*="cloud-stratus"] { padding: 36px 38px 26px; }
+
+/* neglected clouds turn overcast: a tremble every few seconds, and rain */
+.dream-card.neglected {
+  animation:
+    card-bob var(--bob-dur, 6s) ease-in-out var(--bob-delay, 0s) infinite,
+    cloud-shake 4.5s ease-in-out infinite;
+}
+@keyframes cloud-shake {
+  0%, 82%, 100% { rotate: 0deg; }
+  85% { rotate: -1.3deg; }
+  88% { rotate: 1.3deg; }
+  91% { rotate: -1deg; }
+  94% { rotate: .7deg; }
+  97% { rotate: -.3deg; }
+}
+.dream-card.neglected .cloud-shape { filter: drop-shadow(0 10px 20px rgba(110, 118, 160, .45)) saturate(.75) brightness(.95); }
+
+.rain {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 96%;
+  height: 46px;
+  pointer-events: none;
+}
+.rain span {
+  position: absolute;
+  top: 0;
+  width: 2.5px;
+  height: 11px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(111, 138, 220, .75), rgba(111, 138, 220, 0));
+  animation: rain-drop 1.5s linear infinite;
+  opacity: 0;
+}
+@keyframes rain-drop {
+  0% { transform: translateY(0); opacity: 0; }
+  12% { opacity: .8; }
+  80% { opacity: .5; }
+  100% { transform: translateY(40px); opacity: 0; }
+}
 
 /* long-term dreams sit higher and read farther away than mid-term ones */
 .dream-card.h-long {
@@ -1061,6 +1105,7 @@ body[data-sparkle="3"] .bg-cloud {
 /* ============================ REDUCED MOTION ============================ */
 
 @media (prefers-reduced-motion: reduce) {
+  .rain span,
   .dream-card, .tray-pill, .horizon-bubble, #julia-perch,
   #julia-avatar #hair, #julia-avatar #legs #leg-1, #julia-avatar #legs #leg-2,
   .gallery-orb .orb-visual, .bg-cloud, .logo-star, .progress-fill::after {
