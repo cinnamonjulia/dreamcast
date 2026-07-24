@@ -7,8 +7,8 @@
    security, not by hiding the key).
    ============================================================ */
 
-export const SUPABASE_URL = '';        // e.g. 'https://abcdefgh.supabase.co'
-export const SUPABASE_ANON_KEY = '';   // the "anon / public" API key
+export const SUPABASE_URL = 'https://asetladucgiuboldbgjz.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_X7_eo8KV_zSJky4skPEEiA_uoAGsdVv'; // publishable key — safe to be public
 
 let client = null;
 
