@@ -418,8 +418,8 @@ function linkHost(url) {
 
 /* personal dreams are pink; the shorter the horizon, the deeper the shade */
 const PERSONAL_PINK = {
-  mid: 'rgba(246, 158, 196, .9)',   // deeper pink — nearer term
-  long: 'rgba(251, 214, 231, .88)', // pale pink — far away
+  mid: 'rgba(240, 150, 209, .9)',   // deeper cool rose — nearer term
+  long: 'rgba(248, 213, 237, .88)', // pale cool pink — far away
 };
 const NEGLECT_DAYS = 5;
 
