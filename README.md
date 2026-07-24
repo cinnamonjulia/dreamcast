@@ -26,8 +26,27 @@ It's a fully static site — no build step. Either:
 
 ## Your data
 
-- Everything is saved automatically to your browser's `localStorage` (key `dreamcast.v1`). It never leaves your machine.
+- Everything is saved automatically to your browser's `localStorage` (key `dreamcast.v1`). It never leaves your machine unless you enable sync.
 - **Back it up**: Settings (gear icon) → *Export my dreams* downloads a `dreamcast-backup-YYYY-MM-DD.json`. *Import…* restores from one. Do this occasionally — localStorage is per-browser.
+
+## Sync across devices (Supabase, optional)
+
+One-time setup, ~5 minutes, free tier is plenty:
+
+1. Create a project at [supabase.com](https://supabase.com) (any name, any region).
+2. In the project: **SQL Editor** → paste and run:
+   ```sql
+   create table if not exists public.dreamcast_state (
+     user_id uuid primary key references auth.users(id) on delete cascade,
+     data jsonb not null,
+     updated_at timestamptz not null default now()
+   );
+   alter table public.dreamcast_state enable row level security;
+   create policy "own state" on public.dreamcast_state
+     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+   ```
+3. In **Settings → API**, copy the **Project URL** and the **anon public** key, and paste them into the two constants at the top of `js/sync.js`. (The anon key is meant to be public — your data is protected by the row-level security policy above, which only lets you read/write your own row.)
+4. Redeploy (commit + push). Then on any device: Settings → **Sync devices ✦** → enter your email → type the 6-digit code from your inbox. Dreams merge automatically across devices — for each dream, the most recently touched version wins.
 
 ## Around the sky
 

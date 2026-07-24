@@ -11,6 +11,10 @@ import {
 } from './data.js';
 
 import {
+  syncEnabled, currentUser, sendCode, verifyCode, signOut, pullRemote, pushRemote,
+} from './sync.js';
+
+import {
   REDUCED, setMuteSource, initAudioOnGesture, sounds,
   startIdleLife, startAmbientSky, perkUp, happyBounce,
   castTo, castToCard, reelIn, milestoneCatch, miniCatch,
@@ -64,6 +68,44 @@ function persist() {
   try { mergeDisk(JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')); } catch { /* disk unreadable — our state wins */ }
   lastSync = Date.now();
   saveState(state);
+  schedulePush();
+}
+
+/* ---------- cloud sync (Supabase) ---------- */
+
+let pushTimer = null;
+let syncStatus = 'off'; // 'off' | 'signed-out' | 'ok' | 'error'
+
+function schedulePush() {
+  if (!syncEnabled()) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(async () => {
+    try {
+      const pushed = await pushRemote(state);
+      syncStatus = pushed ? 'ok' : 'signed-out';
+    } catch (e) {
+      syncStatus = 'error';
+      console.warn('Dreamcast sync push failed', e);
+    }
+  }, 1500);
+}
+
+async function pullAndMerge({ quiet = true } = {}) {
+  try {
+    const remote = await pullRemote();
+    if (remote) {
+      mergeDisk(remote);
+      lastSync = Date.now();
+      saveState(state);
+      renderAll();
+    }
+    syncStatus = 'ok';
+    if (!quiet) toast('Dreams synced ✦');
+  } catch (e) {
+    syncStatus = 'error';
+    console.warn('Dreamcast sync pull failed', e);
+    if (!quiet) toast('Couldn’t reach the cloud — your dreams are safe on this device.');
+  }
 }
 
 function touch(dream) { dream.lastTouchedAt = new Date().toISOString(); }
@@ -1181,6 +1223,91 @@ function openArchivedModal() {
   ), { slim: true });
 }
 
+/* ---------- sync devices modal ---------- */
+
+async function openSyncModal() {
+  if (!syncEnabled()) {
+    openModal(h('div', {},
+      h('h2', { text: 'Sync devices ✦' }),
+      h('p', { style: 'font-size:14px;line-height:1.5', text: 'Cloud sync isn’t set up yet. It takes about five minutes with a free Supabase project — the steps are in the README, or ask Claude to finish the setup once you have your project URL and anon key.' }),
+    ), { slim: true });
+    return;
+  }
+
+  const user = await currentUser();
+
+  if (user) {
+    openModal(h('div', {},
+      h('h2', { text: 'Sync devices ✦' }),
+      h('p', { style: 'font-size:14px' },
+        document.createTextNode('Syncing as '),
+        h('strong', { text: user.email }),
+        document.createTextNode(' — your dreams follow you to any device where you sign in.')),
+      h('div', { class: 'modal-actions' },
+        h('button', { class: 'btn btn-primary', text: 'Sync now', onclick: async e => { e.target.disabled = true; await pullAndMerge({ quiet: false }); schedulePush(); e.target.disabled = false; } }),
+        h('button', { class: 'btn btn-secondary', text: 'Sign out on this device', onclick: async () => { await signOut(); closeModal(); toast('Signed out — dreams stay saved on this device.'); } }),
+      ),
+    ), { slim: true });
+    return;
+  }
+
+  // signed out: email → code flow
+  const area = h('div');
+  const emailStep = () => {
+    const emailInput = h('input', { type: 'text', placeholder: 'you@example.com', 'aria-label': 'Email address' });
+    setChildren(area,
+      h('p', { style: 'font-size:13.5px;opacity:.8', text: 'Enter your email and we’ll send a 6-digit code — no password needed.' }),
+      h('form', {
+        class: 'ms-add',
+        onsubmit: async e => {
+          e.preventDefault();
+          const email = emailInput.value.trim();
+          if (!email.includes('@')) return;
+          try {
+            await sendCode(email);
+            codeStep(email);
+          } catch (err) {
+            toast('Couldn’t send the code — check the address and try again.');
+            console.warn(err);
+          }
+        },
+      }, emailInput, h('button', { class: 'btn btn-primary', type: 'submit', text: 'Send code' })),
+    );
+  };
+  const codeStep = email => {
+    const codeInput = h('input', { type: 'text', placeholder: '6-digit code', 'aria-label': 'Sign-in code', maxlength: '10' });
+    setChildren(area,
+      h('p', { style: 'font-size:13.5px;opacity:.8' },
+        document.createTextNode('We emailed a code to '),
+        h('strong', { text: email }),
+        document.createTextNode('. Enter it here:')),
+      h('form', {
+        class: 'ms-add',
+        onsubmit: async e => {
+          e.preventDefault();
+          try {
+            await verifyCode(email, codeInput.value.trim());
+            closeModal();
+            toast('Signed in ✦ syncing your dreams…');
+            await pullAndMerge();
+            schedulePush();
+          } catch (err) {
+            toast('That code didn’t work — try again or resend.');
+            console.warn(err);
+          }
+        },
+      }, codeInput, h('button', { class: 'btn btn-primary', type: 'submit', text: 'Verify' })),
+      h('button', { class: 'btn btn-secondary', text: '← Different email', onclick: emailStep }),
+    );
+  };
+  emailStep();
+
+  openModal(h('div', {},
+    h('h2', { text: 'Sync devices ✦' }),
+    area,
+  ), { slim: true });
+}
+
 /* ---------- gallery ---------- */
 
 function showGallery() {
@@ -1371,6 +1498,7 @@ function wireHeader() {
     if (!menu.hidden && !menu.contains(e.target)) menu.hidden = true;
   });
   $('#menu-categories').addEventListener('click', () => { menu.hidden = true; openCategoriesModal(); });
+  $('#menu-sync').addEventListener('click', () => { menu.hidden = true; openSyncModal(); });
   $('#menu-archived').addEventListener('click', () => { menu.hidden = true; openArchivedModal(); });
   $('#menu-export').addEventListener('click', () => { menu.hidden = true; exportState(state); toast('Backup downloaded — keep it somewhere cozy. ✦'); });
   $('#menu-import').addEventListener('click', () => { menu.hidden = true; $('#import-file').click(); });
@@ -1473,6 +1601,16 @@ function init() {
     lastSync = Date.now();
     renderAll();
   });
+
+  // cloud sync: pull on load and whenever the tab comes back into view
+  if (syncEnabled()) {
+    currentUser().then(u => { if (u) pullAndMerge(); else syncStatus = 'signed-out'; });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        currentUser().then(u => { if (u) pullAndMerge(); });
+      }
+    });
+  }
 }
 
 init();
