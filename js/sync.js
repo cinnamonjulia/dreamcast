@@ -35,10 +35,17 @@ export async function currentUser() {
   }
 }
 
-/** Email a 6-digit sign-in code. */
+/** Email a sign-in link (and code, where the template shows one). */
 export async function sendCode(email) {
   const c = await getClient();
-  const { error } = await c.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  const { error } = await c.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true,
+      // land the emailed link exactly back on this page
+      emailRedirectTo: location.origin + location.pathname,
+    },
+  });
   if (error) throw error;
 }
 
