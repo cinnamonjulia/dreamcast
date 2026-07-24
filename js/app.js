@@ -1256,7 +1256,7 @@ async function openSyncModal() {
   const emailStep = () => {
     const emailInput = h('input', { type: 'text', placeholder: 'you@example.com', 'aria-label': 'Email address' });
     setChildren(area,
-      h('p', { style: 'font-size:13.5px;opacity:.8', text: 'Enter your email and we’ll send a 6-digit code — no password needed.' }),
+      h('p', { style: 'font-size:13.5px;opacity:.8', text: 'Enter your email and we’ll send you a sign-in link — no password needed.' }),
       h('form', {
         class: 'ms-add',
         onsubmit: async e => {
@@ -1278,9 +1278,9 @@ async function openSyncModal() {
     const codeInput = h('input', { type: 'text', placeholder: '6-digit code', 'aria-label': 'Sign-in code', maxlength: '10' });
     setChildren(area,
       h('p', { style: 'font-size:13.5px;opacity:.8' },
-        document.createTextNode('We emailed a code to '),
+        document.createTextNode('We emailed a sign-in link to '),
         h('strong', { text: email }),
-        document.createTextNode('. Enter it here:')),
+        document.createTextNode(' — click it and Dreamcast signs in by itself. If your email shows a code instead, type it here:')),
       h('form', {
         class: 'ms-add',
         onsubmit: async e => {
@@ -1604,7 +1604,10 @@ function init() {
 
   // cloud sync: pull on load and whenever the tab comes back into view
   if (syncEnabled()) {
-    currentUser().then(u => { if (u) pullAndMerge(); else syncStatus = 'signed-out'; });
+    currentUser().then(u => {
+      if (u) { pullAndMerge().then(() => schedulePush()); toast(`Synced ✦ signed in as ${u.email}`); }
+      else syncStatus = 'signed-out';
+    });
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         currentUser().then(u => { if (u) pullAndMerge(); });
