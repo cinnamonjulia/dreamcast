@@ -241,6 +241,9 @@ body[data-sparkle="3"] .bg-cloud {
   vertical-align: 1px;
 }
 
+/* faint ring so pale/white category colors stay visible on light surfaces */
+.cat-dot, .cat-ribbon { box-shadow: inset 0 0 0 1px rgba(43, 36, 64, .18); }
+
 .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 
 .gallery-link {

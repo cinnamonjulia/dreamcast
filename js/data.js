@@ -3,7 +3,7 @@
    ============================================================ */
 
 export const STORAGE_KEY = 'dreamcast.v1';
-export const PALETTE = ['#F77FBE', '#FBD3E9', '#6FA8DC', '#8E97E8', '#C3A6F1', '#FFD98E', '#7EC8A9', '#F4A88A'];
+export const PALETTE = ['#F5A8C7', '#92BDE8', '#B79DE0', '#8ED8CE', '#A5D9A2', '#F7E08E', '#F7B884', '#D3C4EE'];
 
 export const uuid = () =>
   crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
@@ -88,20 +88,21 @@ export function makeCategory(name, color, id = null) {
   return { id: id || uuid(), name, color, icon: null };
 }
 
+/* Julia's pastel category set */
+const CATEGORY_SET = [
+  ['cat-career', 'Work', '#92BDE8'],       // pastel blue
+  ['cat-travel', 'Travel', '#B79DE0'],     // pastel purple
+  ['cat-health', 'Health', '#F7E08E'],     // pastel yellow
+  ['cat-home', 'Home', '#F5F1E8'],         // cloud white
+  ['cat-creative', 'Creative', '#F7B884'], // pastel orange
+  ['cat-love', 'Love', '#F5A8C7'],         // pastel pink
+  ['cat-friendship', 'Friendship', '#8ED8CE'], // pastel teal
+  ['cat-money', 'Finances', '#A5D9A2'],    // pastel green
+  ['cat-learning', 'Growth', '#D3C4EE'],   // pale purple
+];
+
 function seedCategories() {
-  // every category gets its own hue so the sky reads at a glance
-  return [
-    makeCategory('Career', '#6FA8DC', 'cat-career'),        // sky blue
-    makeCategory('Creative', '#F77FBE', 'cat-creative'),    // pink
-    makeCategory('Travel', '#5BC8C4', 'cat-travel'),        // teal
-    makeCategory('Love & Friends', '#F2708F', 'cat-love'),  // rose
-    makeCategory('Family', '#F4A88A', 'cat-family'),        // peach
-    makeCategory('Health', '#7EC8A9', 'cat-health'),        // mint
-    makeCategory('Home', '#C3A6F1', 'cat-home'),            // lilac
-    makeCategory('Money', '#5FBD86', 'cat-money'),          // green
-    makeCategory('Learning', '#FFC46B', 'cat-learning'),    // amber
-    makeCategory('Play', '#8E97E8', 'cat-play'),            // periwinkle
-  ];
+  return CATEGORY_SET.map(([id, name, color]) => makeCategory(name, color, id));
 }
 
 function seedDreams() {
@@ -121,7 +122,7 @@ function seedDreams() {
       title: 'Sample: Learn to surf',
       why: 'Salt water, sunshine, and finally standing up on a wave.',
       horizon: 'mid', status: 'active',
-      category: 'cat-play', scope: 'personal',
+      category: 'cat-learning', scope: 'personal',
       milestones: [
         { id: uuid(), text: 'Book a first lesson', done: true, doneAt: iso },
         { id: uuid(), text: 'Pop up on the foam board', done: false, doneAt: null },
@@ -199,6 +200,24 @@ function migrate(raw) {
       if (d.importance === undefined) d.importance = null;
       if (d.dueTime === undefined) d.dueTime = null;
     });
+  }
+  // one-time upgrade to the pastel category set (renames in place, keeps ids)
+  if (!raw.catsV2 && Array.isArray(raw.categories)) {
+    const target = new Map(CATEGORY_SET.map(([id, name, color]) => [id, { name, color }]));
+    raw.categories.forEach(c => {
+      const t = target.get(c.id);
+      if (t) { c.name = t.name; c.color = t.color; }
+    });
+    // drop retired defaults (Family, Play) unless dreams still use them
+    const used = new Set((raw.dreams || []).map(d => d.category));
+    raw.categories = raw.categories.filter(c =>
+      !['cat-family', 'cat-play'].includes(c.id) || used.has(c.id));
+    // add any of the new set that are missing (e.g. Friendship)
+    const have = new Set(raw.categories.map(c => c.id));
+    CATEGORY_SET.forEach(([id, name, color]) => {
+      if (!have.has(id)) raw.categories.push({ id, name, color, icon: null });
+    });
+    raw.catsV2 = true;
   }
   // future: if (raw.version === 1) { ...upgrade...; raw.version = 2; }
   return raw;
