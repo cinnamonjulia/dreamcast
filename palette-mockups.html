@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dreamcast · Twilight Pop Pastel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#2B2440; --lilac:#C3A6F1; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'Nunito',system-ui,sans-serif; color:var(--ink);
+    background:linear-gradient(180deg,#A8D8F0 0%,#B8C4F4 34%,#D9C8F6 66%,#F9CFE4 100%);
+    min-height:100vh; padding:28px 20px 60px;
+  }
+  h1,h2,h3 { font-family:'Baloo 2','Nunito',sans-serif; }
+  .page { max-width:1180px; margin:0 auto; }
+  .page-title {
+    font-size:34px; font-weight:800; text-align:center; margin-bottom:4px;
+    background:linear-gradient(95deg,#F77FBE,#8E97E8);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .page-sub { text-align:center; font-size:14.5px; opacity:.8; margin-bottom:22px; }
+
+  .tabs { display:flex; justify-content:center; gap:10px; margin-bottom:26px; flex-wrap:wrap; }
+  .tab {
+    font-family:'Baloo 2'; font-size:16px; font-weight:700; color:var(--ink);
+    background:rgba(255,255,255,.72); border:2px solid rgba(255,255,255,.9);
+    border-radius:999px; padding:9px 22px; cursor:pointer; transition:all .18s;
+    box-shadow:0 6px 20px rgba(142,151,232,.25);
+  }
+  .tab:hover { transform:translateY(-2px); }
+  .tab.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+
+  .option { display:none; }
+  .option.visible { display:block; animation:fadein .35s ease; }
+  @keyframes fadein { from { opacity:0; transform:translateY(8px);} to { opacity:1; transform:none;} }
+
+  .opt-blurb {
+    background:rgba(255,255,255,.66); backdrop-filter:blur(8px);
+    border-radius:22px; padding:16px 22px; margin-bottom:20px; font-size:14.5px;
+    box-shadow:0 10px 32px rgba(142,151,232,.28); text-align:center;
+  }
+  .opt-blurb b { font-family:'Baloo 2'; font-size:16px; }
+
+  .ramps { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:26px; }
+  @media (max-width:900px){ .ramps { grid-template-columns:repeat(2,1fr);} }
+  .ramp {
+    background:rgba(255,255,255,.78); backdrop-filter:blur(8px);
+    border-radius:20px; padding:14px; box-shadow:0 10px 30px rgba(142,151,232,.25);
+  }
+  .ramp h3 { font-size:16.5px; margin-bottom:8px; display:flex; align-items:center; gap:7px; }
+  .ramp h3 .dot { width:15px; height:15px; border-radius:50%; display:inline-block; box-shadow:inset 0 0 0 2px rgba(255,255,255,.5); }
+  .sw { display:flex; align-items:center; gap:9px; margin:5px 0; }
+  .sw .chip { width:42px; height:26px; border-radius:9px; flex:none; box-shadow:inset 0 0 0 1px rgba(43,36,64,.12); }
+  .sw .lbl { font-size:11.5px; line-height:1.25; }
+  .sw .lbl b { font-size:11.5px; display:block; font-family:ui-monospace,Menlo,monospace; font-weight:700; }
+
+  .mock {
+    border-radius:26px; padding:20px 20px 26px; position:relative; overflow:hidden;
+    background:linear-gradient(180deg,#AEDCF2 0%,#BCC8F5 40%,#DCCCF7 75%,#F9CFE4 100%);
+    box-shadow:0 16px 48px rgba(142,151,232,.4);
+  }
+  .mock-header {
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background:rgba(255,255,255,.6); backdrop-filter:blur(6px);
+    border-radius:18px; padding:10px 16px; margin-bottom:16px;
+  }
+  .logo { font-family:'Baloo 2'; font-weight:800; font-size:20px;
+    background:linear-gradient(95deg,#F77FBE,#8E97E8);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .chips { display:flex; gap:7px; flex-wrap:wrap; }
+  .chip-s {
+    font-size:12px; font-weight:800; padding:5px 12px; border-radius:999px; color:#fff;
+    box-shadow:0 3px 10px rgba(43,36,64,.15);
+  }
+  .chip-p {
+    font-size:12px; font-weight:800; padding:5px 12px; border-radius:999px;
+    box-shadow:inset 0 0 0 1.5px rgba(43,36,64,.10), 0 3px 10px rgba(43,36,64,.08);
+  }
+  .cta { font-size:12.5px; font-weight:800; color:#fff; padding:7px 14px; border-radius:999px;
+    background:linear-gradient(95deg,#F77FBE,#8E97E8); }
+  .cta.ink { background:var(--ink); box-shadow:0 5px 16px rgba(43,36,64,.35); }
+  .logo.palette {
+    background:linear-gradient(95deg,#E556EC 0%,#C265F8 45%,#52C3F4 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+
+  .tray { background:rgba(255,255,255,.5); border-radius:18px; padding:12px 14px; margin-bottom:18px; }
+  .tray-label { font-size:11px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; opacity:.65; margin-bottom:8px; }
+  .pills { display:flex; gap:9px; flex-wrap:wrap; }
+  .pill {
+    display:flex; align-items:center; gap:8px; padding:7px 14px 7px 9px; border-radius:999px;
+    font-size:13px; font-weight:700; box-shadow:0 4px 12px rgba(142,151,232,.22);
+  }
+  .pill .box { width:17px; height:17px; border-radius:50%; background:#fff; border:2px solid var(--lilac); flex:none; }
+  .pill .g { opacity:.85; font-size:11.5px; }
+
+  .sky { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; align-items:start; }
+  @media (max-width:980px){ .sky { grid-template-columns:repeat(2,1fr);} }
+  .cloud-card {
+    border-radius:22px; padding:15px 15px 13px; position:relative;
+    box-shadow:0 12px 34px rgba(142,151,232,.35);
+    animation:bob 6s ease-in-out infinite;
+  }
+  .cloud-card::before {
+    content:''; position:absolute; top:-11px; left:18px; width:34px; height:22px;
+    background:inherit; border-radius:50%;
+  }
+  .cloud-card::after {
+    content:''; position:absolute; top:-15px; left:44px; width:46px; height:28px;
+    background:inherit; border-radius:50%;
+  }
+  .cloud-card:nth-child(2){ animation-delay:-2s; }
+  .cloud-card:nth-child(3){ animation-delay:-3.5s; }
+  .cloud-card:nth-child(4){ animation-delay:-5s; }
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-6px);} }
+  .cc-top { display:flex; align-items:baseline; gap:7px; position:relative; z-index:1; }
+  .cc-title { font-family:'Baloo 2'; font-size:15.5px; font-weight:700; flex:1; }
+  .cc-glyph { font-size:13px; }
+  .tag { font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    background:rgba(255,255,255,.6); border-radius:999px; padding:2px 8px; }
+  .cc-why { font-size:11.8px; opacity:.82; margin:5px 0 9px; line-height:1.35; }
+  .ptrack { height:9px; border-radius:999px; background:rgba(255,255,255,.65); overflow:hidden; }
+  .pfill { height:100%; border-radius:999px; }
+  .prow { display:flex; align-items:center; gap:8px; }
+  .prow .ptrack { flex:1; }
+  .ppct { font-size:11px; font-weight:800; }
+  .cc-next { font-size:11.5px; margin-top:7px; }
+  .cc-next b { font-weight:800; }
+  .cc-foot { font-size:10.5px; font-weight:700; margin-top:8px; }
+  .steps { display:flex; gap:7px; margin-top:9px; flex-wrap:wrap; }
+  .step {
+    font-size:10.8px; font-weight:700; padding:5px 11px; border-radius:999px;
+    box-shadow:0 3px 10px rgba(142,151,232,.25);
+  }
+  .legend {
+    display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin-top:18px;
+    font-size:11.5px; font-weight:700; opacity:.85;
+  }
+  .legend span { display:flex; align-items:center; gap:6px; }
+  .legend i { width:12px; height:12px; border-radius:4px; display:inline-block; font-style:normal; }
+  footer { text-align:center; font-size:12px; opacity:.65; margin-top:26px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1 class="page-title">Twilight Pop · Pastel ✦</h1>
+  <p class="page-sub">Your pick, floated up into the clouds — surfaces are now MUCH lighter than the anchors. The vivid anchor only appears in small doses: progress fills, ribbons, and dots.</p>
+  <div class="tabs" id="tabs"></div>
+  <div id="options"></div>
+  <footer>Body text: ink #2B2440 on every tint (11:1+ on pale, 7:1+ on dark) · Accent: labels, “Next:”, % · Deep: small text like dates &amp; “last touched”.</footer>
+</div>
+
+<script>
+const INK = '#2B2440';
+const OPTIONS = [
+  {
+    id:'pastel', name:'✧ Pastel (new)',
+    blurb:'<b>Twilight Pop · Pastel.</b> Each scope keeps its Twilight Pop anchor, but every surface is a big step lighter: mid-term cards wear a soft mid-pastel, long-term cards go lighter still, and dreamsteps &amp; tasks are barely-there whispers of the hue. The anchor itself is reserved for progress fills and tiny pops, and each scope gets two darker inks — an accent and a deep — for text that needs to carry the color.',
+    fill:'anchor',
+    cats:{
+      personal:{ label:'Personal', glyph:'✿', anchor:'#E556EC', dark:'#EF96F3', medium:'#F5BFF8', pale:'#FBE7FC', accent:'#B343B8', deep:'#833187' },
+      professional:{ label:'Professional', glyph:'✦', anchor:'#318EA3', dark:'#7FB9C6', medium:'#B1D4DC', pale:'#E2EFF2', accent:'#2B7D90', deep:'#205C6A' },
+      passion:{ label:'Passion', glyph:'⌗', anchor:'#C265F8', dark:'#D9A0FB', medium:'#E8C4FC', pale:'#F6E9FE', accent:'#974FC2', deep:'#763E97' },
+      peace:{ label:'Peace', glyph:'☮', anchor:'#96D9F6', dark:'#96D9F6', medium:'#D0EEFB', pale:'#EFF9FE', accent:'#2F7EA1', deep:'#1F5C79' },
+    }
+  },
+  {
+    id:'orig', name:'Original (compare)',
+    blurb:'<b>Twilight Pop · Original</b> — the version from the first round, kept here so you can flip back and forth and feel the difference.',
+    fill:'accent',
+    cats:{
+      personal:{ label:'Personal', glyph:'✿', anchor:'#E556EC', dark:'#E956F0', medium:'#F2AAF6', pale:'#FAE1FC', accent:'#B343B8', deep:'#833187' },
+      professional:{ label:'Professional', glyph:'✦', anchor:'#318EA3', dark:'#509FB1', medium:'#98C6D1', pale:'#DAEBEE', accent:'#2B7D90', deep:'#205C6A' },
+      passion:{ label:'Passion', glyph:'⌗', anchor:'#C265F8', dark:'#C465FC', medium:'#E0B2FC', pale:'#F4E3FE', accent:'#974FC2', deep:'#763E97' },
+      peace:{ label:'Peace', glyph:'☮', anchor:'#96D9F6', dark:'#52C3F4', medium:'#CAECFA', pale:'#ECF8FD', accent:'#517584', deep:'#3F5B67' },
+    }
+  },
+];
+
+const CARDS = [
+  { cat:'personal', horizon:'Mid', title:'Learn to surf', why:'Salt water, sunshine, standing up on a wave.', pct:33, next:'Pop up on the foam board', steps:['Pop up on foam board','Catch an unbroken wave'] },
+  { cat:'professional', horizon:'Long', title:'Launch my dream project', why:'The idea that keeps me up at night deserves daylight.', pct:33, next:'Build a tiny prototype', steps:['Build a tiny prototype','Show it to three people'] },
+  { cat:'passion', horizon:'Mid', title:'Ship the next app', why:'Little worlds, built by hand, shared with everyone.', pct:60, next:'Polish the onboarding', steps:['Polish the onboarding','Beta with five friends'] },
+  { cat:'peace', horizon:'Long', title:'A calm, cozy apartment', why:'Every room a soft place to land.', pct:45, next:'Style the bookshelf', steps:['Style the bookshelf','Morning-light reading nook'] },
+];
+
+const TASKS = [
+  { cat:'personal', text:'Call grandma' },
+  { cat:'professional', text:'Send that one email' },
+  { cat:'passion', text:'Sketch the new screen' },
+  { cat:'peace', text:'Water the plants' },
+];
+
+const tabsEl = document.getElementById('tabs');
+const optsEl = document.getElementById('options');
+
+OPTIONS.forEach((opt, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'tab' + (i===0?' active':'');
+  btn.textContent = opt.name;
+  btn.onclick = () => {
+    document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active', j===i));
+    document.querySelectorAll('.option').forEach((o,j)=>o.classList.toggle('visible', j===i));
+  };
+  tabsEl.appendChild(btn);
+
+  const div = document.createElement('div');
+  div.className = 'option' + (i===0?' visible':'');
+
+  const ramps = Object.values(opt.cats).map(c => `
+    <div class="ramp">
+      <h3><span class="dot" style="background:${c.anchor}"></span>${c.glyph} ${c.label}</h3>
+      <div class="sw"><span class="chip" style="background:${c.anchor}"></span><span class="lbl">Anchor · fills, dots, ribbons<b>${c.anchor}</b></span></div>
+      <div class="sw"><span class="chip" style="background:${c.dark}"></span><span class="lbl">Darker · mid-term cards<b>${c.dark}</b></span></div>
+      <div class="sw"><span class="chip" style="background:${c.medium}"></span><span class="lbl">Medium · long-term cards<b>${c.medium}</b></span></div>
+      <div class="sw"><span class="chip" style="background:${c.pale}"></span><span class="lbl">Palest · dreamsteps &amp; tasks<b>${c.pale}</b></span></div>
+      <div class="sw"><span class="chip" style="background:${c.accent}"></span><span class="lbl">Accent · labels &amp; %<b>${c.accent}</b></span></div>
+      <div class="sw"><span class="chip" style="background:${c.deep}"></span><span class="lbl">Deep · small text on tints<b>${c.deep}</b></span></div>
+    </div>`).join('');
+
+  const chips = opt.id === 'pastel'
+    ? Object.values(opt.cats).map(c =>
+        `<span class="chip-p" style="background:${c.pale};color:${c.deep}">${c.glyph} ${c.label}</span>`
+      ).join('')
+    : Object.values(opt.cats).map(c =>
+        `<span class="chip-s" style="background:${c.accent}">${c.glyph} ${c.label}</span>`).join('');
+
+  const stateDemo = opt.id === 'pastel' ? (() => {
+    const c = opt.cats.personal;
+    return `
+    <div class="tray" style="margin-bottom:18px">
+      <div class="tray-label">Chip states — pastel at rest, dark only while selected</div>
+      <div class="pills" style="align-items:center">
+        <span class="chip-p" style="background:${c.pale};color:${c.deep}">${c.glyph} Personal · rest</span>
+        <span class="chip-p" style="background:${c.medium};color:${c.deep}">${c.glyph} Personal · hover</span>
+        <span class="chip-s" style="background:${c.accent}">${c.glyph} Personal · selected</span>
+      </div>
+    </div>`;
+  })() : '';
+
+  const pills = TASKS.map(t => {
+    const c = opt.cats[t.cat];
+    return `<span class="pill" style="background:${c.pale}">
+      <span class="box" style="border-color:${c.anchor}"></span>${t.text}
+      <span class="g" style="color:${c.accent}">${c.glyph}</span></span>`;
+  }).join('');
+
+  const cards = CARDS.map(card => {
+    const c = opt.cats[card.cat];
+    const surface = card.horizon === 'Mid' ? c.dark : c.medium;
+    const fill = opt.fill === 'anchor' ? c.anchor : c.accent;
+    const steps = card.steps.map(s =>
+      `<span class="step" style="background:${c.pale}"><span style="color:${c.accent}">☁</span> ${s}</span>`).join('');
+    return `
+      <div class="cloud-card" style="background:${surface}">
+        <div class="cc-top">
+          <span class="cc-title">${card.title}</span>
+          <span class="cc-glyph" style="color:${c.deep}">${c.glyph}</span>
+          <span class="tag" style="color:${c.deep}">${card.horizon}</span>
+        </div>
+        <p class="cc-why">${card.why}</p>
+        <div class="prow">
+          <div class="ptrack"><div class="pfill" style="width:${card.pct}%;background:${fill}"></div></div>
+          <span class="ppct" style="color:${c.deep}">${card.pct}%</span>
+        </div>
+        <div class="cc-next"><b style="color:${c.accent}">Next:</b> ${card.next}</div>
+        <div class="steps">${steps}</div>
+        <div class="cc-foot" style="color:${c.deep}">target 2026-10-01 · last touched 2d ago</div>
+      </div>`;
+  }).join('');
+
+  div.innerHTML = `
+    <div class="opt-blurb">${opt.blurb}</div>
+    <div class="ramps">${ramps}</div>
+    <div class="mock">
+      <div class="mock-header">
+        <span class="logo${opt.id === 'pastel' ? ' palette' : ''}">Dreamcast</span>
+        <span class="chips">${chips}</span>
+        <span class="cta${opt.id === 'pastel' ? ' ink' : ''}">＋ Catch a new dream ✦</span>
+      </div>
+      ${stateDemo}
+      <div class="tray">
+        <div class="tray-label">Today &amp; this week — palest hue</div>
+        <div class="pills">${pills}</div>
+      </div>
+      <div class="sky">${cards}</div>
+      <div class="legend">
+        <span><i style="background:${Object.values(opt.cats)[0].dark}"></i> darker = mid-term</span>
+        <span><i style="background:${Object.values(opt.cats)[0].medium}"></i> medium = long-term</span>
+        <span><i style="background:${Object.values(opt.cats)[0].pale}"></i> palest = dreamsteps &amp; tasks</span>
+        <span><i style="background:${Object.values(opt.cats)[0].anchor}"></i> anchor = fills &amp; pops only</span>
+      </div>
+    </div>`;
+  optsEl.appendChild(div);
+});
+</script>
+</body>
+</html>
