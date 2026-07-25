@@ -580,8 +580,8 @@ body[data-sparkle="3"] .bg-cloud {
 #cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
-  gap: 64px 40px;
-  padding: 40px 250px 44px 20px; /* room for Julia & cloud bumps */
+  gap: 34px 26px; /* steps live inside the cards now — the sky can be cozy */
+  padding: 34px 250px 32px 16px; /* room for Julia & cloud bumps */
   align-items: start;
 }
 @media (max-width: 1360px) {
