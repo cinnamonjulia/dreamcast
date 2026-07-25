@@ -630,6 +630,32 @@ function openStepModal(dreamId, msId) {
           touch(d); persist(); render(); renderAll();
         },
       }, stText, stDate, h('button', { class: 'btn btn-secondary', type: 'submit', text: '＋' })),
+      h('h3', { text: 'Links' }),
+      (m.links || []).length ? h('ul', { class: 'ms-list' },
+        ...m.links.map((l, li) =>
+          h('li', { class: 'ms-item link-row' },
+            h('a', { href: l.url, target: '_blank', rel: 'noopener noreferrer', text: l.title || linkHost(l.url) }),
+            h('span', { class: 'link-url', text: linkHost(l.url) }),
+            h('div', { class: 'ms-tools' },
+              h('button', { text: '✕', 'aria-label': 'Remove link', onclick: () => { m.links.splice(li, 1); touch(d); persist(); render(); renderAll(); } }),
+            ),
+          ))) : null,
+      (() => {
+        const urlIn = h('input', { type: 'text', placeholder: 'https://…', 'aria-label': 'Link URL', maxlength: '500', style: 'flex:2;min-width:0' });
+        const labelIn = h('input', { type: 'text', placeholder: 'Label', 'aria-label': 'Link label', maxlength: '80', style: 'flex:1;min-width:0' });
+        return h('form', {
+          class: 'ms-add subtask-add',
+          onsubmit: e => {
+            e.preventDefault();
+            let url = urlIn.value.trim();
+            if (!url) return;
+            if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+            try { new URL(url); } catch { toast('That link doesn’t look like a URL.'); return; }
+            m.links.push({ id: uuid(), title: labelIn.value.trim() || null, url });
+            touch(d); persist(); render(); renderAll(); sounds.tick();
+          },
+        }, urlIn, labelIn, h('button', { class: 'btn btn-secondary', type: 'submit', text: '＋' }));
+      })(),
       h('div', { class: 'modal-actions' },
         h('button', { class: 'btn btn-primary', text: 'Catch this step ✦', onclick: () => { closeModal(); catchMilestoneFromSky(d, m); } }),
         h('button', { class: 'btn btn-secondary', text: 'Open the dream', onclick: () => { closeModal(); openDreamModal(d.id); } }),
@@ -704,6 +730,8 @@ function renderCard(d) {
     ),
   );
 
+  const scopeTint = SCOPE_TINTS[d.scope] || SCOPE_TINTS.personal;
+
   // dream steps: baby clouds in the same hue family as their parent —
   // pink with pink, blue with blue, gold with gold, teal with teal
   const STEP_TINTS = {
@@ -719,14 +747,20 @@ function renderCard(d) {
       ...steps.slice(0, 3).map((m, i) => {
         const stTotal = (m.subtasks || []).length;
         const stDone = (m.subtasks || []).filter(s => s.done).length;
+        const pct = stTotal ? Math.round((stDone / stTotal) * 100) : 0;
         return h('button', {
           class: `step-cloud sc-${i}`,
           style: `background:${stepTint}`,
           title: `Dream step: ${m.text} — click to open`,
           onclick: e => { e.stopPropagation(); openStepModal(d.id, m.id); },
         },
-          h('span', { class: 'step-text', text: m.text }),
-          stTotal ? h('span', { class: 'st-count', text: `${stDone}/${stTotal}` }) : null,
+          h('span', { class: 'step-row' },
+            h('span', { class: 'step-text', text: m.text }),
+            stTotal ? h('span', { class: 'st-count', text: `${stDone}/${stTotal}` }) : null,
+            (m.links || []).length ? h('span', { class: 'st-count', text: `${m.links.length} ↗` }) : null,
+          ),
+          stTotal ? h('span', { class: 'step-progress' },
+            h('span', { class: 'step-progress-fill', style: `width:${pct}%;background:${scopeTint.mid}` })) : null,
         );
       }),
       steps.length > 3 ? h('button', {
@@ -738,7 +772,6 @@ function renderCard(d) {
     ));
   }
 
-  const scopeTint = SCOPE_TINTS[d.scope] || SCOPE_TINTS.personal;
   card.style.setProperty('--tint', scopeTint[d.horizon] || scopeTint.mid);
 
   // stable float randomization per dream

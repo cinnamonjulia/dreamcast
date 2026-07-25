@@ -211,7 +211,10 @@ function migrate(raw) {
       if (d.dishName === undefined) d.dishName = null;
       if (d.servings === undefined) d.servings = null;
       if (d.scope === 'haven') d.scope = 'peace';
-      (d.milestones || []).forEach(m => { if (!Array.isArray(m.subtasks)) m.subtasks = []; });
+      (d.milestones || []).forEach(m => {
+        if (!Array.isArray(m.subtasks)) m.subtasks = [];
+        if (!Array.isArray(m.links)) m.links = [];
+      });
     });
   }
   if (!raw.fridge || !Array.isArray(raw.fridge.items)) raw.fridge = { items: [] };

@@ -812,14 +812,16 @@ body[data-sparkle="3"] .bg-cloud {
   position: absolute;
   z-index: 3;
   display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  max-width: 128px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  max-width: 178px;
+  min-width: 96px;
   border: none;
   background: rgba(255, 255, 255, .94);
-  border-radius: 999px;
-  padding: 6px 13px;
-  font-size: 11px;
+  border-radius: 20px;
+  padding: 9px 16px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--ink);
   box-shadow: 0 6px 16px rgba(142, 151, 232, .35);
@@ -854,11 +856,21 @@ body[data-sparkle="3"] .bg-cloud {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.sc-0 { top: -18px; right: 10%; animation-delay: -1.2s; }
-.sc-1 { left: -8px; top: 46%; animation-delay: -2.8s; }
-.sc-2 { bottom: -12px; right: 24%; animation-delay: -.6s; }
-.sc-3 { bottom: -10px; left: 12%; animation-delay: -2s; }
-.step-more { font-weight: 800; color: var(--periwinkle); }
+.step-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.step-progress {
+  display: block;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(43, 36, 64, .12);
+  overflow: hidden;
+}
+.step-progress-fill { display: block; height: 100%; border-radius: 999px; }
+
+.sc-0 { top: -26px; right: 10%; animation-delay: -1.2s; }
+.sc-1 { left: -12px; top: 46%; animation-delay: -2.8s; }
+.sc-2 { bottom: -18px; right: 24%; animation-delay: -.6s; }
+.sc-3 { bottom: -14px; left: 12%; animation-delay: -2s; }
+.step-more { font-weight: 800; color: var(--periwinkle); flex-direction: row; min-width: 0; }
 
 /* ============================ RECENT STRIP ============================ */
 
