@@ -1,0 +1,6 @@
+# Served as real HTTP headers by Netlify / Cloudflare Pages.
+# (GitHub Pages ignores this file — it cannot set custom headers.)
+/*
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff

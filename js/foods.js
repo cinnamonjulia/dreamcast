@@ -79,6 +79,198 @@ const DB = [
   [/flour|sugar|honey|syrup|oil|vinegar|salt|spice|peanut butter|jam|nutella/i, 'can', null, 'pantry'],
 ];
 
+/* ---------- staples & recipe ideas ---------- */
+
+/* the boring-but-essential things everyone forgets to list */
+export const STAPLES = [
+  { id: 'salt', name: 'salt' },
+  { id: 'pepper', name: 'black pepper' },
+  { id: 'olive-oil', name: 'olive oil' },
+  { id: 'oil', name: 'cooking oil' },
+  { id: 'flour', name: 'flour' },
+  { id: 'sugar', name: 'sugar' },
+  { id: 'honey', name: 'honey / maple syrup' },
+  { id: 'soy', name: 'soy sauce' },
+  { id: 'vinegar', name: 'vinegar' },
+  { id: 'mustard', name: 'mustard' },
+  { id: 'mayo', name: 'mayo' },
+  { id: 'ketchup', name: 'ketchup' },
+  { id: 'hot-sauce', name: 'hot sauce' },
+  { id: 'spices', name: 'dried spices (cumin, paprika…)' },
+  { id: 'herbs', name: 'dried herbs (oregano, basil…)' },
+  { id: 'garlic', name: 'garlic' },
+  { id: 'stock', name: 'stock / bouillon' },
+  { id: 'baking', name: 'baking powder & soda' },
+  { id: 'vanilla', name: 'vanilla' },
+  { id: 'breadcrumbs', name: 'breadcrumbs' },
+];
+
+const stapleName = id => STAPLES.find(s => s.id === id)?.name || id;
+
+/* each need is a group of interchangeable icon keys; `label` names the group
+   and doubles as the shopping-list entry when the group is missing */
+const RECIPES = [
+  { name: 'Veggie fried rice', emoji: '🍚',
+    needs: [
+      { any: ['rice'], label: 'rice' },
+      { any: ['eggs'], label: 'eggs' },
+      { any: ['carrot', 'broccoli', 'greens', 'onion'], label: 'a veggie' },
+    ],
+    staples: ['oil', 'soy'] },
+  { name: 'Cozy pasta night', emoji: '🍝',
+    needs: [
+      { any: ['pasta'], label: 'pasta' },
+      { any: ['tomato', 'can', 'cheese'], label: 'sauce or cheese' },
+    ],
+    staples: ['olive-oil', 'salt', 'garlic'] },
+  { name: 'Cheesy omelette', emoji: '🍳',
+    needs: [
+      { any: ['eggs'], label: 'eggs' },
+      { any: ['cheese', 'greens', 'tomato'], label: 'a filling' },
+    ],
+    staples: ['salt', 'pepper'] },
+  { name: 'Grilled cheese', emoji: '🥪',
+    needs: [
+      { any: ['bread'], label: 'bread' },
+      { any: ['cheese'], label: 'cheese' },
+    ],
+    staples: [] },
+  { name: 'Weeknight stir-fry', emoji: '🥡',
+    needs: [
+      { any: ['chicken', 'tofu', 'meat', 'fish'], label: 'a protein' },
+      { any: ['broccoli', 'carrot', 'greens', 'onion'], label: 'a veggie' },
+      { any: ['rice', 'pasta'], label: 'rice or noodles' },
+    ],
+    staples: ['oil', 'soy', 'garlic'] },
+  { name: 'Berry smoothie', emoji: '🥤',
+    needs: [
+      { any: ['berries', 'banana'], label: 'berries or a banana' },
+      { any: ['milk', 'yogurt', 'juice'], label: 'milk, yogurt, or juice' },
+    ],
+    staples: ['honey'] },
+  { name: 'Sheet-pan chicken', emoji: '🍗',
+    needs: [
+      { any: ['chicken'], label: 'chicken' },
+      { any: ['potato', 'carrot', 'broccoli', 'onion'], label: 'a roastable veg' },
+    ],
+    staples: ['olive-oil', 'spices', 'salt'] },
+  { name: 'Avocado toast', emoji: '🥑',
+    needs: [
+      { any: ['bread'], label: 'bread' },
+      { any: ['avocado'], label: 'an avocado' },
+    ],
+    staples: ['salt', 'pepper'] },
+  { name: 'Yogurt parfait', emoji: '🍓',
+    needs: [
+      { any: ['yogurt'], label: 'yogurt' },
+      { any: ['berries', 'banana', 'cereal', 'apple'], label: 'fruit or granola' },
+    ],
+    staples: ['honey'] },
+  { name: 'Pantry soup', emoji: '🥣',
+    needs: [
+      { any: ['can'], label: 'canned beans or soup base' },
+      { any: ['carrot', 'potato', 'onion', 'greens', 'tomato'], label: 'a veggie' },
+    ],
+    staples: ['stock', 'salt', 'herbs'] },
+  { name: 'Loaded baked potato', emoji: '🥔',
+    needs: [
+      { any: ['potato'], label: 'potatoes' },
+      { any: ['cheese', 'yogurt', 'butter'], label: 'a topping' },
+    ],
+    staples: ['salt', 'pepper'] },
+  { name: 'Fish & greens', emoji: '🐟',
+    needs: [
+      { any: ['fish'], label: 'fish' },
+      { any: ['greens', 'broccoli', 'rice'], label: 'a side' },
+    ],
+    staples: ['olive-oil', 'salt'] },
+  { name: 'Snack board', emoji: '🧀',
+    needs: [
+      { any: ['cheese', 'dip'], label: 'cheese or a dip' },
+      { any: ['grapes', 'apple', 'snacks', 'bread', 'citrus'], label: 'something to pair' },
+    ],
+    staples: [] },
+  { name: 'Breakfast for dinner', emoji: '🥞',
+    needs: [
+      { any: ['eggs'], label: 'eggs' },
+      { any: ['milk'], label: 'milk' },
+    ],
+    staples: ['flour', 'sugar', 'baking'] },
+];
+
+/**
+ * Rank recipe ideas against what's on the shelves.
+ * items: fridge items (pass unexpired ones); stapleSet: Set of checked staple ids.
+ * Returns [{ name, emoji, ready, have:[item names], missing:[labels], missingStaples:[names] }]
+ */
+export function suggestRecipes(items, stapleSet) {
+  const byIcon = new Map();
+  items.forEach(i => { if (!byIcon.has(i.icon)) byIcon.set(i.icon, i.name); });
+  return RECIPES.map(r => {
+    const have = [], missing = [];
+    r.needs.forEach(g => {
+      const hit = g.any.find(icon => byIcon.has(icon));
+      if (hit) have.push(byIcon.get(hit));
+      else missing.push(g.label);
+    });
+    const missingStaples = r.staples.filter(s => !stapleSet.has(s)).map(stapleName);
+    return { name: r.name, emoji: r.emoji, ready: missing.length === 0, have, missing, missingStaples };
+  })
+    .filter(r => r.have.length > 0)
+    .sort((a, b) => a.missing.length - b.missing.length || b.have.length - a.have.length);
+}
+
+/* ---------- recipe → grocery list ---------- */
+
+const QTY_RE = /^((\d+\s+\d+\/\d+)|(\d+\/\d+)|(\d+([.,]\d+)?)|[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])(\s*(-|–|—|to)\s*((\d+\/\d+)|(\d+([.,]\d+)?)|[½⅓⅔¼¾⅛]))?\s*/;
+
+const UNIT_RE = /^(cups?|c\.|tablespoons?|tbsps?|tbsp|tbs|teaspoons?|tsps?|tsp|fl\.? ?oz|ounces?|oz|pounds?|lbs?|lb|grams?|g|kilograms?|kgs?|kg|milliliters?|millilitres?|ml|liters?|litres?|l|quarts?|qts?|pints?|pts?|gallons?|sticks?|cloves?|cans?|jars?|packages?|pkgs?|packets?|bunch(es)?|heads?|stalks?|ribs?|sprigs?|slices?|pieces?|pinch(es)?|dash(es)?|handfuls?|knobs?|bags?|box(es)?|containers?|bottles?)\b\.?\s*/i;
+
+const SECTION_RE = /^(ingredients?|instructions?|directions?|method|steps?|preparation|notes?|equipment|nutrition|for (the )?serving|to serve|garnish|topping|serves?|servings?|yields?|prep time|cook time|total time|course|cuisine|author|rating)\b/i;
+
+const VERB_RE = /^(preheat|heat|mix|stir|bake|cook|serve|combine|add|whisk|pour|place|remove|let|transfer|season|bring|reduce|simmer|boil|drain|set aside|meanwhile|once|when|then|repeat|cover|garnish|sprinkle|enjoy|in a|using)\b/i;
+
+function cleanIngredientLine(raw) {
+  let s = raw.trim()
+    .replace(/^[-–—*•▢☐■□✓✔·◦○●☐•]+\s*/, '') // bullets & checkboxes
+    .replace(/\([^)]*\)/g, ' ')                          // parentheticals like "(14 oz)"
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!s || /[:：]$/.test(s)) return null;               // "For the sauce:"
+  if (SECTION_RE.test(s) || VERB_RE.test(s)) return null;
+  s = s.replace(/^(about|approx\.?|roughly|optional:?)\s+/i, '');
+  s = s.replace(QTY_RE, '').replace(UNIT_RE, '');
+  s = s.replace(QTY_RE, '').replace(UNIT_RE, '');        // "2 15-oz cans …" leftovers
+  s = s.replace(/^of\s+/i, '');
+  s = s.split(/,| — | – /)[0];                           // drop ", finely chopped"
+  s = s.replace(/\s+(to taste|for garnish|for serving|divided|as needed)$/i, '');
+  s = s.replace(/\s+/g, ' ').trim().replace(/[.;]+$/, '');
+  if (s.length < 2 || s.split(' ').length > 8) return null;
+  return s;
+}
+
+/** Pull a shoppable ingredient list out of pasted recipe text. */
+export function parseRecipeIngredients(text) {
+  if (!text) return [];
+  let lines = text.split('\n');
+  // if the paste includes the whole page, keep only the ingredients section
+  const start = lines.findIndex(l => /^\s*ingredients?\b/i.test(l));
+  if (start !== -1) {
+    const rest = lines.slice(start + 1);
+    const end = rest.findIndex(l => /^\s*(instructions?|directions?|method|steps?|preparation|nutrition|notes?)\b/i.test(l));
+    lines = end === -1 ? rest : rest.slice(0, end);
+  }
+  const out = [];
+  const seen = new Set();
+  for (const raw of lines) {
+    const name = cleanIngredientLine(raw);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (!seen.has(key)) { seen.add(key); out.push(name); }
+  }
+  return out;
+}
+
 /** Match a grocery name to icon/shelf-life/area. */
 export function matchFood(name) {
   for (const [re, icon, days, area] of DB) {
@@ -93,5 +285,8 @@ export function dishFood() {
 }
 
 export function foodIconSvg(icon, size = 44) {
-  return `<svg viewBox="0 0 40 40" width="${size}" height="${size}" aria-hidden="true">${ICONS[icon] || ICONS.generic}</svg>`;
+  // own-property lookup only: `icon` can arrive via imported backups, and this
+  // string lands in innerHTML — inherited keys like 'constructor' must not resolve
+  const body = Object.prototype.hasOwnProperty.call(ICONS, icon) ? ICONS[icon] : ICONS.generic;
+  return `<svg viewBox="0 0 40 40" width="${size}" height="${size}" aria-hidden="true">${body}</svg>`;
 }

@@ -1145,6 +1145,7 @@ body[data-sparkle="3"] .bg-cloud {
 
 /* updates timeline */
 .updates-list { list-style: none; margin: 0; padding: 0; max-height: 180px; overflow-y: auto; }
+.updates-list.log-list { max-height: 30vh; }
 .updates-list li { padding: 7px 0; border-bottom: 1px dashed rgba(142,151,232,.3); font-size: 13.5px; }
 .updates-list .u-date { font-size: 11px; font-weight: 800; color: var(--periwinkle); margin-right: 8px; }
 
@@ -1298,6 +1299,79 @@ body[data-sparkle="3"] .bg-cloud {
 
 #fridge-view { margin: 20px 40px 60px; position: relative; min-height: 70vh; }
 .fridge-summary { font-size: 13px; font-weight: 700; color: var(--periwinkle); }
+
+/* drag-to-decide drop zones (task log & morning rollover) */
+.drop-zones { display: flex; gap: 12px; margin: 12px 0 16px; }
+.drop-zone {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border: 2px dashed rgba(142, 151, 232, .5);
+  border-radius: 14px;
+  padding: 12px 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--periwinkle);
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.drop-zone.zone-trash { border-color: rgba(247, 127, 190, .5); color: var(--pink, #F77FBE); }
+.drop-zone.drag-over { background: rgba(142, 151, 232, .14); border-style: solid; transform: scale(1.02); }
+.drop-zone.zone-trash.drag-over { background: rgba(247, 127, 190, .14); }
+.zone-date { border: none; background: transparent; font: inherit; color: inherit; cursor: pointer; }
+.rollover-item[draggable="true"], .log-row[draggable="true"] { cursor: grab; }
+.rollover-item[draggable="true"]:active, .log-row[draggable="true"]:active { cursor: grabbing; }
+.overdue-badge, .where-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.overdue-badge { color: #E2578A; background: rgba(247, 127, 190, .16); }
+.where-badge { color: var(--periwinkle); background: rgba(142, 151, 232, .16); }
+
+/* staples checklist */
+.staples-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  margin-top: 10px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.staple-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 5px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.staple-check:hover { background: var(--pink-soft, rgba(247, 127, 190, .12)); }
+.staple-check input { accent-color: var(--periwinkle); width: 16px; height: 16px; cursor: pointer; }
+
+/* recipe idea cards */
+.idea-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; max-height: 52vh; overflow-y: auto; }
+.idea-card {
+  border: 1.5px solid rgba(142, 151, 232, .35);
+  border-radius: 14px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, .6);
+}
+.idea-card.ready { border-color: var(--periwinkle); box-shadow: 0 4px 14px rgba(142, 151, 232, .25); }
+.idea-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.idea-name { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+.idea-badge { font-size: 11.5px; font-weight: 700; color: var(--periwinkle); white-space: nowrap; }
+.idea-card.ready .idea-badge { color: var(--pink, #F77FBE); }
+.idea-have, .idea-missing, .idea-staples { font-size: 12.5px; margin: 3px 0; opacity: .8; }
+.idea-missing { color: var(--pink, #F77FBE); font-weight: 700; opacity: 1; }
+.idea-staples { font-style: italic; opacity: .65; }
+.idea-card .chip { margin-top: 6px; }
 
 .kitchen {
   display: flex;

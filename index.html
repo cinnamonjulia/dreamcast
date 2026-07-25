@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://esm.sh https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
 <title>Dreamcast ✦</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -278,6 +280,9 @@
     <h2>The Fridge ✦</h2>
     <span id="fridge-summary" class="fridge-summary"></span>
     <button id="stock-kitchen" class="chip">＋ stock items</button>
+    <button id="staples-btn" class="chip">🧂 staples</button>
+    <button id="recipe-ideas" class="chip">✨ what can I cook?</button>
+    <button id="recipe-list" class="chip">🍲 recipe → grocery list</button>
   </div>
   <div class="kitchen">
     <div class="appliance-wrap">

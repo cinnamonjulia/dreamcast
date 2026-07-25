@@ -177,7 +177,7 @@ export function defaultState() {
     dreams: seedDreams(),
     categories: seedCategories(),
     jar: [],
-    fridge: { items: [] },
+    fridge: { items: [], staples: [] },
     settings: {
       muted: false,
       sort: 'momentum',
@@ -220,6 +220,7 @@ function migrate(raw) {
     });
   }
   if (!raw.fridge || !Array.isArray(raw.fridge.items)) raw.fridge = { items: [] };
+  if (!Array.isArray(raw.fridge.staples)) raw.fridge.staples = [];
   // one-time upgrade to the pastel category set (renames in place, keeps ids)
   if (!raw.catsV2 && Array.isArray(raw.categories)) {
     const target = new Map(CATEGORY_SET.map(([id, name, color]) => [id, { name, color }]));

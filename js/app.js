@@ -14,7 +14,7 @@ import {
   syncEnabled, currentUser, sendCode, verifyCode, signOut, pullRemote, pushRemote, onAuth,
 } from './sync.js';
 
-import { matchFood, dishFood, foodIconSvg } from './foods.js';
+import { matchFood, dishFood, foodIconSvg, parseRecipeIngredients, STAPLES, suggestRecipes } from './foods.js';
 
 import {
   REDUCED, setMuteSource, initAudioOnGesture, sounds,
@@ -542,6 +542,16 @@ function linkHost(url) {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
 }
 
+/* stored URLs may come from imports/sync, not just our validated forms —
+   never let a non-http(s) scheme reach an href */
+function safeHref(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+  } catch { /* fall through */ }
+  return '#';
+}
+
 /* personal dreams are pink; the shorter the horizon, the deeper the shade */
 const SCOPE_TINTS = {
   personal: {                          // cool rose
@@ -700,7 +710,7 @@ function openStepModal(dreamId, msId) {
       (m.links || []).length ? h('ul', { class: 'ms-list' },
         ...m.links.map((l, li) =>
           h('li', { class: 'ms-item link-row' },
-            h('a', { href: l.url, target: '_blank', rel: 'noopener noreferrer', text: l.title || linkHost(l.url) }),
+            h('a', { href: safeHref(l.url), target: '_blank', rel: 'noopener noreferrer', text: l.title || linkHost(l.url) }),
             h('span', { class: 'link-url', text: linkHost(l.url) }),
             h('div', { class: 'ms-tools' },
               h('button', { text: '✕', 'aria-label': 'Remove link', onclick: () => { m.links.splice(li, 1); touch(d); persist(); render(); renderAll(); } }),
@@ -784,7 +794,7 @@ function renderCard(d) {
       ...d.links.slice(0, 3).map(l =>
         h('a', {
           class: 'card-link-chip',
-          href: l.url, target: '_blank', rel: 'noopener noreferrer',
+          href: safeHref(l.url), target: '_blank', rel: 'noopener noreferrer',
           title: l.url,
           onclick: e => e.stopPropagation(),
         }, document.createTextNode((l.title || linkHost(l.url)) + ' ↗'))),
@@ -1123,7 +1133,7 @@ function openDreamModal(id) {
       d.links.length ? h('ul', { class: 'ms-list' },
         ...d.links.map((l, i) =>
           h('li', { class: 'ms-item link-row' },
-            h('a', { href: l.url, target: '_blank', rel: 'noopener noreferrer', text: l.title || linkHost(l.url) }),
+            h('a', { href: safeHref(l.url), target: '_blank', rel: 'noopener noreferrer', text: l.title || linkHost(l.url) }),
             h('span', { class: 'link-url', text: linkHost(l.url) }),
             h('div', { class: 'ms-tools' },
               h('button', { text: '✕', 'aria-label': 'Remove link', onclick: () => { d.links.splice(i, 1); touch(d); persist(); renderLinks(); renderAll(); } }),
@@ -1843,58 +1853,157 @@ function renderPeony() {
     : 'Finish tasks to bloom today’s peony — click for the task log';
 }
 
+/* ---------- drag-to-decide: shared future/trash drop zones ---------- */
+
+function tomorrowISO() {
+  const t = new Date(); t.setDate(t.getDate() + 1);
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
+/* rows carry their id in the drag payload; zones look up what to do in `handlers` */
+function dropZones(handlers) {
+  const dateIn = h('input', {
+    type: 'date', class: 'zone-date', value: tomorrowISO(),
+    'aria-label': 'Date for tasks dropped on the future zone',
+  });
+  const makeZone = (cls, apply, ...kids) => {
+    const z = h('div', { class: `drop-zone ${cls}` }, ...kids);
+    z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag-over'); });
+    z.addEventListener('dragleave', () => z.classList.remove('drag-over'));
+    z.addEventListener('drop', e => {
+      e.preventDefault();
+      z.classList.remove('drag-over');
+      const hnd = handlers.get(e.dataTransfer.getData('text/plain'));
+      if (hnd) apply(hnd);
+    });
+    return z;
+  };
+  return h('div', { class: 'drop-zones' },
+    makeZone('zone-future', hnd => hnd.future(dateIn.value || tomorrowISO()),
+      h('span', { text: '🗓 drop here → the future' }), dateIn),
+    makeZone('zone-trash', hnd => hnd.trash(),
+      h('span', { text: '🗑 drop here → let it go' })),
+  );
+}
+
 /* ---------- task log: scheduled ahead & caught in the past ---------- */
 
 function openTasksModal() {
   const today = todayISO();
+  // "move to this week" for a dated step: tomorrow if it's still this week, else today
+  const tmrISO = tomorrowISO();
+  const laterThisWeek = weekKey(new Date(tmrISO + 'T12:00')) === weekKey() ? tmrISO : today;
   const upcoming = [];
+  const inFlight = [];
   const past = [];
   for (const d of state.dreams) {
     if (d.horizon === 'short' && d.status === 'achieved' && d.achievedAt) {
       past.push({ date: d.achievedAt, text: d.title, kind: 'goal', restore: () => { d.status = 'active'; d.achievedAt = null; touch(d); } });
     }
-    if (d.horizon === 'short' && d.status === 'active' && d.scheduledFor && d.scheduledFor > today) {
-      upcoming.push({
-        date: d.scheduledFor, text: d.title, dream: null, scope: d.scope,
+    if (d.horizon === 'short' && d.status === 'active') {
+      const entry = {
+        id: d.id,
+        date: d.scheduledFor, text: d.title, dream: null, scope: d.scope, category: d.category,
         open: () => openQuickGoalModal(d.id),
         reschedule: v => { d.scheduledFor = v || null; touch(d); },
-      });
+        complete: () => completeQuickGoal(d.id, null),
+        moveToday: () => { d.scheduledFor = null; d.cadence = 'today'; touch(d); },
+        moveWeek: () => { d.scheduledFor = null; d.cadence = 'this-week'; touch(d); },
+        trash: () => { d.status = 'archived'; touch(d); },
+      };
+      if (d.scheduledFor && d.scheduledFor > today) upcoming.push(entry);
+      else inFlight.push({ ...entry, overdue: Boolean(d.scheduledFor && d.scheduledFor < today), where: d.cadence === 'today' ? 'today' : 'this week' });
     }
     for (const m of d.milestones) {
       for (const st of (m.subtasks || [])) {
         if (st.done && st.doneAt) {
           past.push({ date: st.doneAt, text: st.text, kind: 'subtask', dream: d.title, restore: () => { st.done = false; st.doneAt = null; touch(d); } });
-        } else if (!st.done && st.scheduledFor && st.scheduledFor > today && d.status === 'active') {
-          upcoming.push({
+        } else if (!st.done && st.scheduledFor && d.status === 'active') {
+          const entry = {
+            id: `${d.id}:${st.id}`,
             date: st.scheduledFor, text: st.text, dream: d.title, scope: d.scope,
             category: st.category || d.category,
             open: () => openDreamModal(d.id),
             reschedule: v => { st.scheduledFor = v || null; touch(d); },
-          });
+            complete: () => completeSubtask(d.id, m.id, st.id, null),
+            moveToday: () => { st.scheduledFor = today; touch(d); },
+            moveWeek: () => { st.scheduledFor = laterThisWeek; touch(d); },
+            trash: () => { m.subtasks.splice(m.subtasks.findIndex(x => x.id === st.id), 1); touch(d); },
+          };
+          if (st.scheduledFor > today) upcoming.push(entry);
+          else inFlight.push({ ...entry, overdue: st.scheduledFor < today, where: 'dream step' });
         }
       }
     }
   }
   upcoming.sort((a, b) => (a.date < b.date ? -1 : 1));
+  inFlight.sort((a, b) => ((a.date || '9999') < (b.date || '9999') ? -1 : 1));
   past.sort((a, b) => (a.date > b.date ? -1 : 1));
+
+  const handlers = new Map();
+  const refresh = () => { persist(); renderAll(); closeModal(); openTasksModal(); };
+  [...upcoming, ...inFlight].forEach(u => handlers.set(u.id, {
+    future: v => { u.reschedule(v); refresh(); toast('Sent to the future ✦'); },
+    trash: () => { u.trash(); refresh(); toast('Let it go 🗑'); },
+  }));
+  const rowBase = u => ({ class: 'log-row', draggable: 'true', ondragstart: e => e.dataTransfer.setData('text/plain', u.id) });
+  const catDot = u => { const c = state.categories.find(x => x.id === u.category); return c ? h('span', { class: 'cat-dot', style: `background:${c.color}`, title: c.name }) : null; };
 
   openModal(h('div', {},
     h('h2', { text: 'Task log ✦' }),
+    h('p', { style: 'font-size:13px;opacity:.7', text: 'Drag any task onto a zone below — pick a date to send it to the future, or let it go.' }),
+    dropZones(handlers),
+    h('h3', { text: 'Still in flight — not caught yet' }),
+    inFlight.length ? h('ul', { class: 'updates-list log-list' },
+      ...inFlight.slice(0, 40).map(u => h('li', rowBase(u),
+        u.overdue
+          ? h('span', { class: 'overdue-badge', text: 'overdue' })
+          : h('span', { class: 'where-badge', text: u.where }),
+        h('span', { class: 'scope-glyph', text: scopeGlyph(u.scope) }),
+        catDot(u),
+        h('a', { href: '#', text: u.text, onclick: e => { e.preventDefault(); closeModal(); u.open(); } }),
+        u.dream ? h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }) : null,
+        h('button', {
+          class: 'btn btn-secondary log-restore', text: '✓ done', title: 'Mark it complete',
+          onclick: () => { closeModal(); u.complete(); toast('Caught it ✦'); },
+        }),
+        h('button', {
+          class: 'btn btn-secondary log-restore', text: '→ tomorrow', title: 'Move it to tomorrow',
+          onclick: () => { u.reschedule(tomorrowISO()); refresh(); toast('See you tomorrow ✦'); },
+        }),
+        h('button', {
+          class: 'btn btn-secondary log-restore', text: '🗑', title: 'Let it go',
+          onclick: () => { u.trash(); refresh(); toast('Let it go 🗑'); },
+        }),
+      )))
+      : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'Nothing waiting — the trays are all caught up ✦' }),
     h('h3', { text: 'Scheduled ahead — click a date to move it' }),
-    upcoming.length ? h('ul', { class: 'updates-list' },
-      ...upcoming.slice(0, 40).map(u => h('li', { class: 'log-row' },
+    upcoming.length ? h('ul', { class: 'updates-list log-list' },
+      ...upcoming.slice(0, 40).map(u => h('li', rowBase(u),
         h('input', {
           type: 'date', class: 'log-date', value: u.date, 'aria-label': `Reschedule ${u.text}`,
           onchange: e => { u.reschedule(e.target.value); persist(); renderAll(); toast('Rescheduled ✦'); },
         }),
         h('span', { class: 'scope-glyph', text: scopeGlyph(u.scope) }),
-        (() => { const c = state.categories.find(x => x.id === u.category); return c ? h('span', { class: 'cat-dot', style: `background:${c.color}`, title: c.name }) : null; })(),
+        catDot(u),
         h('a', { href: '#', text: u.text, onclick: e => { e.preventDefault(); closeModal(); u.open(); } }),
         u.dream ? h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }) : null,
+        h('button', {
+          class: 'btn btn-secondary log-restore', text: '✓ done', title: 'Mark it complete',
+          onclick: () => { closeModal(); u.complete(); toast('Caught it ✦'); },
+        }),
+        h('button', {
+          class: 'btn btn-secondary log-restore', text: '→ today', title: 'Move into the Today tray',
+          onclick: () => { u.moveToday(); refresh(); toast('Moved to today ✦'); },
+        }),
+        h('button', {
+          class: 'btn btn-secondary log-restore', text: '→ this week', title: 'Move into the This Week tray',
+          onclick: () => { u.moveWeek(); refresh(); toast('Moved to this week ✦'); },
+        }),
       )))
       : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'Nothing scheduled yet — date a task in the tray or a subtask inside a dream.' }),
     h('h3', { text: 'Caught in the past — bring one back if it needs another round' }),
-    past.length ? h('ul', { class: 'updates-list' },
+    past.length ? h('ul', { class: 'updates-list log-list' },
       ...past.slice(0, 60).map(u => h('li', { class: 'log-row' },
         h('span', { class: 'u-date', text: u.date.slice(0, 10) }),
         document.createTextNode(u.text),
@@ -2049,11 +2158,26 @@ function openStockModal() {
     placeholder: 'milk\nrice\nfrozen peas\n…everything you have, one per line',
     style: 'min-height:160px',
   });
+  const file = h('input', { type: 'file', accept: '.txt,.csv,text/plain,text/csv', hidden: '' });
+  file.addEventListener('change', () => {
+    const f = file.files?.[0];
+    if (!f) return;
+    f.text().then(txt => {
+      const names = txt.split(/[\n,;]+/)
+        .map(x => x.replace(/^["']|["']$/g, '').trim())
+        .filter(x => x && !/^(items?|name|groceries)$/i.test(x)); // skip a CSV header row
+      if (!names.length) { toast('That file looked empty — try a plain list ✦'); return; }
+      ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + names.join('\n');
+    });
+    file.value = '';
+  });
   openModal(h('div', {},
     h('h2', { text: 'Stock the kitchen ✦' }),
-    h('p', { style: 'font-size:13px;opacity:.75', text: 'Write down everything in your fridge and pantry — each item lands on the right shelf with an estimated shelf life.' }),
+    h('p', { style: 'font-size:13px;opacity:.75', text: 'Write down everything in your fridge and pantry — or upload a list — and each item lands on the right shelf with an estimated shelf life.' }),
     h('div', { class: 'field' }, ta),
+    file,
     h('div', { class: 'modal-actions' },
+      h('button', { class: 'btn', text: '📄 upload a list (.txt / .csv)', onclick: () => file.click() }),
       h('button', {
         class: 'btn btn-primary', text: 'Put it all away ✦',
         onclick: () => {
@@ -2062,6 +2186,139 @@ function openStockModal() {
           stockFridge(names);
           persist();
           closeModal();
+        },
+      }),
+    ),
+  ), { slim: true });
+}
+
+function openStaplesModal() {
+  const have = new Set(state.fridge.staples);
+  openModal(h('div', {},
+    h('h2', { text: 'Staples I always have 🧂' }),
+    h('p', { style: 'font-size:13px;opacity:.75', text: 'Tick the basics living in your pantry — salt, oil, spices. Recipe ideas will assume these are covered and never nag you to buy them.' }),
+    h('div', { class: 'staples-grid' },
+      ...STAPLES.map(s =>
+        h('label', { class: 'staple-check' },
+          h('input', {
+            type: 'checkbox', checked: have.has(s.id),
+            onchange: e => {
+              if (e.target.checked) state.fridge.staples.push(s.id);
+              else state.fridge.staples = state.fridge.staples.filter(x => x !== s.id);
+              persist();
+            },
+          }),
+          h('span', { text: s.name }),
+        ),
+      ),
+    ),
+  ), { slim: true });
+}
+
+function openRecipeIdeasModal() {
+  const fresh = state.fridge.items.filter(i => !isExpired(i));
+  const ideas = suggestRecipes(fresh, new Set(state.fridge.staples));
+  if (!ideas.length) {
+    openModal(h('div', {},
+      h('h2', { text: 'What can I cook? ✨' }),
+      h('p', { style: 'font-size:13px;opacity:.75', text: 'The shelves are looking bare — stock a few items first and ideas will appear here.' }),
+    ), { slim: true });
+    return;
+  }
+  const ideaCard = r => {
+    const staplesNote = r.missingStaples.length
+      ? h('p', { class: 'idea-staples', text: `staples to check: ${r.missingStaples.join(', ')}` })
+      : null;
+    return h('div', { class: 'idea-card' + (r.ready ? ' ready' : '') },
+      h('div', { class: 'idea-head' },
+        h('span', { class: 'idea-name', text: `${r.emoji} ${r.name}` }),
+        h('span', { class: 'idea-badge', text: r.ready ? 'ready to cook ✦' : `missing ${r.missing.length}` }),
+      ),
+      h('p', { class: 'idea-have', text: `uses: ${r.have.join(', ')}` }),
+      r.missing.length ? h('p', { class: 'idea-missing', text: `missing: ${r.missing.join(', ')}` }) : null,
+      staplesNote,
+      r.missing.length ? h('button', {
+        class: 'chip', text: '＋ add missing to a grocery run',
+        onclick: () => {
+          const dream = makeDream({
+            title: `Grocery run — ${r.name}`,
+            horizon: 'short', cadence: 'today', scope: 'personal',
+            category: 'cat-home',
+            groceries: r.missing,
+            dishName: r.name,
+          });
+          state.dreams.unshift(dream);
+          persist();
+          closeModal();
+          renderAll();
+          toast(`Shopping list for ${r.name} is in your Today tray ✦`);
+        },
+      }) : null,
+    );
+  };
+  const searchNames = [...new Set(fresh.map(i => i.name))].slice(0, 6);
+  openModal(h('div', {},
+    h('h2', { text: 'What can I cook? ✨' }),
+    h('p', { style: 'font-size:13px;opacity:.75', text: 'Ideas matched to what’s on your shelves right now. Tick your staples first so it knows what you already have.' }),
+    h('div', { class: 'idea-list' }, ...ideas.slice(0, 8).map(ideaCard)),
+    h('div', { class: 'modal-actions' },
+      h('button', { class: 'btn', text: '🧂 my staples', onclick: () => { closeModal(); openStaplesModal(); } }),
+      searchNames.length ? h('button', {
+        class: 'btn btn-primary', text: 'find more recipes online ✦',
+        onclick: () => window.open(
+          'https://www.google.com/search?q=' + encodeURIComponent(`easy recipe with ${searchNames.join(' ')}`),
+          '_blank', 'noopener'),
+      }) : null,
+    ),
+  ), { slim: true });
+}
+
+function openRecipeModal() {
+  const link = h('input', { type: 'text', placeholder: 'https://… (optional)' });
+  const dish = h('input', { type: 'text', maxlength: '80', placeholder: 'e.g. Lemon Ricotta Pasta' });
+  const ta = h('textarea', {
+    placeholder: 'paste the whole recipe here — ingredients, steps, everything',
+    style: 'min-height:140px',
+  });
+  const listTa = h('textarea', {
+    placeholder: 'the grocery list appears here — edit it freely',
+    style: 'min-height:110px',
+  });
+  ta.addEventListener('input', () => {
+    listTa.value = parseRecipeIngredients(ta.value).join('\n');
+  });
+  link.addEventListener('change', () => {
+    const name = urlToDishName(link.value.trim());
+    if (name && !dish.value) dish.placeholder = name;
+  });
+  openModal(h('div', {},
+    h('h2', { text: 'Recipe → grocery list ✦' }),
+    h('p', { style: 'font-size:13px;opacity:.75', text: 'Paste a recipe and the ingredients become a shopping list in your Today tray. Finishing the grocery run stocks the fridge — and completing it drops the cooked dish in too.' }),
+    h('div', { class: 'field' }, h('label', { text: 'Recipe link (optional)' }), link),
+    h('div', { class: 'field' }, h('label', { text: 'Recipe' }), ta),
+    h('div', { class: 'field' }, h('label', { text: 'Grocery list (tweak before saving)' }), listTa),
+    h('div', { class: 'field' }, h('label', { text: 'Dish name (what shows in the fridge)' }), dish),
+    h('div', { class: 'modal-actions' },
+      h('button', {
+        class: 'btn btn-primary', text: 'Make my list ✦',
+        onclick: () => {
+          const groceries = listTa.value.split('\n').map(x => x.trim()).filter(Boolean);
+          if (!groceries.length) { toast('Paste a recipe first — no ingredients found yet ✦'); return; }
+          const dishName = dish.value.trim() || urlToDishName(link.value.trim()) || null;
+          const dream = makeDream({
+            title: `Grocery run — ${dishName || 'new recipe'}`,
+            horizon: 'short', cadence: 'today', scope: 'personal',
+            category: 'cat-home',
+            groceries,
+            recipeLink: link.value.trim() || null,
+            dishName,
+          });
+          state.dreams.unshift(dream);
+          persist();
+          closeModal();
+          renderAll();
+          toast(`Shopping list ready — ${groceries.length} ingredient${groceries.length === 1 ? '' : 's'} ✦`);
+          openGroceryNote(dream.id);
         },
       }),
     ),
@@ -2103,6 +2360,9 @@ function wireFridge() {
   $('#fridge-dock')?.addEventListener('click', showFridge);
   $('#fridge-back')?.addEventListener('click', hideFridge);
   $('#stock-kitchen')?.addEventListener('click', openStockModal);
+  $('#staples-btn')?.addEventListener('click', openStaplesModal);
+  $('#recipe-ideas')?.addEventListener('click', openRecipeIdeasModal);
+  $('#recipe-list')?.addEventListener('click', openRecipeModal);
   $('#fridge-unit')?.addEventListener('click', e => {
     if (e.target.closest('.food-item')) return;
     $('#fridge-unit').classList.toggle('open');
@@ -2199,15 +2459,17 @@ function checkRollover() {
   const wk = weekKey();
   const pending = [];
 
+  // tasks deliberately scheduled for today or later were already decided — don't re-ask
+  const undecided = d => !d.scheduledFor || d.scheduledFor < today;
   if (s.lastOpenDate !== today) {
     state.dreams
-      .filter(d => d.status === 'active' && d.horizon === 'short' && d.cadence === 'today')
+      .filter(d => d.status === 'active' && d.horizon === 'short' && d.cadence === 'today' && undecided(d))
       .forEach(d => pending.push({ dream: d, kind: 'today' }));
     s.lastOpenDate = today;
   }
   if (s.lastOpenWeek !== wk) {
     state.dreams
-      .filter(d => d.status === 'active' && d.horizon === 'short' && d.cadence === 'this-week')
+      .filter(d => d.status === 'active' && d.horizon === 'short' && d.cadence === 'this-week' && undecided(d))
       .forEach(d => pending.push({ dream: d, kind: 'week' }));
     s.lastOpenWeek = wk;
   }
@@ -2218,27 +2480,44 @@ function checkRollover() {
 function openRolloverModal(items) {
   const listArea = h('div');
   const remaining = new Set(items.map(i => i.dream.id));
+  const handlers = new Map();
 
   const finishIfEmpty = () => {
     if (!remaining.size) { closeModal(); renderAll(); }
   };
 
   const rowFor = ({ dream, kind }) => {
-    const row = h('div', { class: 'rollover-item' },
+    const settle = fn => {
+      fn();
+      touch(dream); persist(); renderAll();
+      remaining.delete(dream.id); row.remove(); finishIfEmpty();
+    };
+    const row = h('div', {
+      class: 'rollover-item', draggable: 'true',
+      ondragstart: e => e.dataTransfer.setData('text/plain', dream.id),
+    },
       h('span', { class: 'r-title', text: dream.title }),
       h('button', {
         class: 'btn btn-secondary', text: kind === 'today' ? 'Keep today' : 'Keep this week',
-        onclick: () => { touch(dream); persist(); remaining.delete(dream.id); row.remove(); finishIfEmpty(); },
+        onclick: () => settle(() => {}),
+      }),
+      h('button', {
+        class: 'btn btn-secondary', text: '→ tomorrow',
+        onclick: () => settle(() => { dream.scheduledFor = tomorrowISO(); }),
       }),
       kind === 'today' ? h('button', {
         class: 'btn btn-secondary', text: 'This week instead',
-        onclick: () => { dream.cadence = 'this-week'; touch(dream); persist(); remaining.delete(dream.id); row.remove(); finishIfEmpty(); },
+        onclick: () => settle(() => { dream.cadence = 'this-week'; }),
       }) : null,
       h('button', {
         class: 'btn btn-danger', text: 'Let it drift away',
-        onclick: () => { dream.status = 'archived'; touch(dream); persist(); remaining.delete(dream.id); row.remove(); finishIfEmpty(); },
+        onclick: () => settle(() => { dream.status = 'archived'; }),
       }),
     );
+    handlers.set(dream.id, {
+      future: v => settle(() => { dream.scheduledFor = v; }),
+      trash: () => settle(() => { dream.status = 'archived'; }),
+    });
     return row;
   };
 
@@ -2246,7 +2525,8 @@ function openRolloverModal(items) {
 
   openModal(h('div', {},
     h('h2', { text: 'Still chasing these? ☁️' }),
-    h('p', { style: 'font-size:13.5px;opacity:.75', text: 'No pressure — dreams keep. Where should these go?' }),
+    h('p', { style: 'font-size:13.5px;opacity:.75', text: 'No pressure — dreams keep. Choose for each, or drag a task onto a zone below.' }),
+    dropZones(handlers),
     listArea,
     h('div', { class: 'modal-actions' },
       h('button', { class: 'btn btn-secondary', text: 'Keep them all', onclick: () => { items.forEach(i => touch(i.dream)); persist(); closeModal(); renderAll(); } }),

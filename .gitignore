@@ -7,3 +7,6 @@ DREAMCAST_SPEC.md
 # local tooling
 .claude/
 .DS_Store
+
+# personal files — never publish
+the apartment/
