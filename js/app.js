@@ -417,6 +417,24 @@ function isGroceryTask(d) {
   return /grocer|market|food ?shop/i.test(d.title) || (d.groceries?.length > 0);
 }
 
+/* recipe URLs almost always carry the dish name in their slug — mine it */
+function urlToDishName(url) {
+  if (!url) return null;
+  try {
+    const segs = new URL(url).pathname.split('/').filter(Boolean);
+    let seg = [...segs].reverse().find(s => /[a-z]/i.test(s) && !/^\d+$/.test(s)) || '';
+    seg = decodeURIComponent(seg)
+      .replace(/\.(html?|php|aspx?)$/i, '')
+      .replace(/[-_+]+/g, ' ')
+      .replace(/\b(recipe|recipes|video|print)\b/gi, '')
+      .replace(/\d{4,}/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!seg || seg.length < 3) return null;
+    return seg.split(' ').map(w => (w ? w[0].toUpperCase() + w.slice(1) : '')).join(' ').trim();
+  } catch { return null; }
+}
+
 function completeQuickGoal(id, pillEl) {
   const d = findDream(id);
   if (!d) return;
@@ -436,8 +454,12 @@ function completeQuickGoal(id, pillEl) {
   // kitchen magic: groceries stock the fridge, recipes become dishes
   if (d.groceries?.length) stockFridge(d.groceries);
   if (d.recipeLink || /\b(cook|meal prep|bake|dinner|lunch|breakfast)\b/i.test(d.title)) {
-    addFoodItem(d.title.replace(/^(cook|make|bake|meal prep:?|prep)\s*/i, '') || 'Home-cooked meal', dishFood());
-    toast('Something delicious landed in the fridge ✦');
+    const name = d.dishName
+      || urlToDishName(d.recipeLink)
+      || d.title.replace(/^(cook|make|bake|meal prep:?|prep)\s*/i, '')
+      || 'Home-cooked meal';
+    addFoodItem(name, dishFood(), { servings: d.servings || null });
+    toast(`"${name}" landed in the fridge ✦`);
   }
   persist();
 
@@ -1192,8 +1214,32 @@ function openQuickGoalModal(id) {
       h('label', { text: 'Recipe link (optional — completing adds the dish to the fridge)' }),
       h('input', {
         type: 'text', placeholder: 'https://…', value: d.recipeLink || '',
-        onchange: e => { d.recipeLink = e.target.value.trim() || null; touch(d); persist(); renderAll(); },
+        onchange: e => {
+          d.recipeLink = e.target.value.trim() || null;
+          touch(d); persist(); renderAll();
+          const dn = document.getElementById('qg-dishname');
+          if (dn && !dn.value && d.recipeLink) dn.placeholder = urlToDishName(d.recipeLink) || 'Home-cooked meal';
+        },
       }),
+    ),
+    h('div', { class: 'field-row' },
+      h('div', { class: 'field' },
+        h('label', { text: 'Dish name (what shows in the fridge)' }),
+        h('input', {
+          type: 'text', id: 'qg-dishname', maxlength: '80',
+          value: d.dishName || '',
+          placeholder: urlToDishName(d.recipeLink) || 'auto-named from the recipe link',
+          onchange: e => { d.dishName = e.target.value.trim() || null; touch(d); persist(); },
+        }),
+      ),
+      h('div', { class: 'field' },
+        h('label', { text: 'Servings' }),
+        h('input', {
+          type: 'number', min: '1', max: '99', value: d.servings || '',
+          placeholder: 'e.g. 4',
+          onchange: e => { d.servings = Number(e.target.value) || null; touch(d); persist(); },
+        }),
+      ),
     ),
     h('div', { class: 'modal-actions' },
       h('button', {
@@ -1672,7 +1718,7 @@ function openGroceryNote(id) {
 
 /* ---------- the fridge ---------- */
 
-function addFoodItem(name, info) {
+function addFoodItem(name, info, extra = {}) {
   const now = Date.now();
   state.fridge.items.push({
     id: uuid(),
@@ -1681,6 +1727,7 @@ function addFoodItem(name, info) {
     area: info.area,
     addedAt: new Date(now).toISOString(),
     expiresAt: info.days ? new Date(now + info.days * 86400000).toISOString() : null,
+    ...extra,
   });
 }
 
@@ -1718,12 +1765,13 @@ function renderFridge() {
     shelves.forEach(s => s.replaceChildren());
     items.filter(i => i.area === area).forEach((item, idx) => {
       const used = item.usedPct ? ` · ${100 - item.usedPct}% left` : '';
+      const servings = item.servings ? ` · ${item.servings} serving${item.servings === 1 ? '' : 's'}` : '';
       const hash = [...item.id].reduce((a, c) => a + c.charCodeAt(0), 0);
       const el = h('span', {
         class: 'food-item' + (isExpired(item) ? ' expired' : '') + expiryMotionClass(item),
         draggable: 'true',
         'data-id': item.id,
-        'data-label': `${item.name} · ${expiryLabel(item)}${used}`,
+        'data-label': `${item.name} · ${expiryLabel(item)}${servings}${used}`,
         style: `--hue:${((hash % 7) - 3) * 9}deg`,
         html: foodIconSvg(item.icon),
         ondragstart: e => e.dataTransfer.setData('text/plain', item.id),
@@ -1744,8 +1792,22 @@ function openFoodModal(id) {
   if (!item) return;
   openModal(h('div', {},
     h('div', { style: 'text-align:center', html: foodIconSvg(item.icon, 72) }),
-    h('h2', { text: item.name, style: 'text-align:center' }),
     h('p', { style: 'text-align:center;font-size:13px;font-weight:700;color:var(--periwinkle)', text: expiryLabel(item) }),
+    h('div', { class: 'field' },
+      h('label', { text: 'Name' }),
+      h('input', {
+        type: 'text', value: item.name, maxlength: '80',
+        onchange: e => { item.name = e.target.value.trim() || item.name; persist(); renderFridge(); },
+      }),
+    ),
+    item.icon === 'dish' ? h('div', { class: 'field' },
+      h('label', { text: 'Servings left' }),
+      h('input', {
+        type: 'number', min: '0', max: '99', value: item.servings || '',
+        placeholder: 'e.g. 4',
+        onchange: e => { item.servings = Number(e.target.value) || null; persist(); renderFridge(); },
+      }),
+    ) : null,
     h('div', { class: 'field' },
       h('label', { text: 'Expiration date' }),
       h('input', {
@@ -2071,6 +2133,12 @@ function renderQuickAddSelects() {
     const preferred = state.settings.filterCategory || prev || state.settings.lastUsedCategory;
     if (preferred && state.categories.some(c => c.id === preferred)) sel.value = preferred;
   });
+  $$('.quick-add .qa-scope').forEach(sel => {
+    const prev = sel.value;
+    setChildren(sel, ...SCOPE_OPTIONS.map(([v, label]) => h('option', { value: v, text: label })));
+    // follow the active P tab; otherwise keep whatever was picked
+    sel.value = state.settings.filterScope !== 'all' ? state.settings.filterScope : (prev || 'personal');
+  });
 }
 
 function wireQuickAdd() {
@@ -2078,11 +2146,13 @@ function wireQuickAdd() {
     const input = form.querySelector('input[type=text]');
     const dateInput = form.querySelector('.qa-date');
     const catSel = form.querySelector('.qa-cat');
+    const scopeSel = form.querySelector('.qa-scope');
     form.addEventListener('submit', e => {
       e.preventDefault();
       const title = input.value.trim();
       if (!title) return;
-      const scope = state.settings.filterScope !== 'all' ? state.settings.filterScope : 'personal';
+      const scope = scopeSel?.value
+        || (state.settings.filterScope !== 'all' ? state.settings.filterScope : 'personal');
       state.dreams.unshift(makeDream({
         title,
         horizon: 'short',

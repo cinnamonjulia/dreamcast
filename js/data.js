@@ -73,6 +73,8 @@ export function makeDream(partial = {}) {
     scheduledFor: null,       // 'YYYY-MM-DD' — short goals can be scheduled ahead
     groceries: [],            // grocery list — completing the goal stocks the fridge
     recipeLink: null,         // recipe URL — completing the goal adds a dish to the fridge
+    dishName: null,           // what the cooked dish is called in the fridge
+    servings: null,           // how many servings the dish makes
     manualPercent: null,      // used only when no milestones
     targetDate: null,
     pinned: false,
@@ -206,6 +208,8 @@ function migrate(raw) {
       if (!Array.isArray(d.groceries)) d.groceries = [];
       if (d.recipeLink === undefined) d.recipeLink = null;
       if (d.scheduledFor === undefined) d.scheduledFor = null;
+      if (d.dishName === undefined) d.dishName = null;
+      if (d.servings === undefined) d.servings = null;
       if (d.scope === 'haven') d.scope = 'peace';
       (d.milestones || []).forEach(m => { if (!Array.isArray(m.subtasks)) m.subtasks = []; });
     });

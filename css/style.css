@@ -507,7 +507,7 @@ body[data-sparkle="3"] .bg-cloud {
 .tray-pill .scope-glyph { font-size: 11px; opacity: .75; }
 
 .quick-add { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.quick-add .qa-date, .quick-add .qa-cat {
+.quick-add .qa-date, .quick-add .qa-cat, .quick-add .qa-scope {
   border: 1.5px solid rgba(142, 151, 232, .35);
   background: rgba(255, 255, 255, .55);
   border-radius: 999px;
