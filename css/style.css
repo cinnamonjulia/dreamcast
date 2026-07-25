@@ -1592,8 +1592,31 @@ body[data-sparkle="3"] .bg-cloud {
 }
 @keyframes house-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
+.house-row { display: flex; align-items: flex-end; }
+.house-main { flex: 1 1 76%; min-width: 0; }
+
 .house-roof { margin: 0 -3.5%; }
 .house-roof svg { display: block; width: 100%; height: auto; }
+
+/* the attached garage wing, tucked against the house's right wall */
+.garage-wing {
+  flex: 0 0 25%;
+  min-width: 0;
+  margin-left: -10px;
+  position: relative;
+  z-index: 2;
+}
+.garage-box .room { display: block; width: 100%; }
+.garage-roof svg { display: block; width: 106%; margin-left: -3%; height: auto; }
+.garage-box {
+  background: #F7EFE0;
+  border: 3px solid var(--ink);
+  border-radius: 4px 4px 18px 14px;
+  padding: 8px;
+  margin-top: -10px;
+  position: relative;
+  box-shadow: 0 24px 70px rgba(142, 151, 232, .4);
+}
 
 .house-rooms {
   position: relative;

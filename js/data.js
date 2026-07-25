@@ -111,7 +111,7 @@ function seedCategories() {
 }
 
 /* The Apartment: six rooms, each backed by a step of one ☮ dream */
-export const APARTMENT_ROOM_KEYS = ['kitchen', 'mudroom', 'foyer', 'bedroom', 'office', 'living-room'];
+export const APARTMENT_ROOM_KEYS = ['kitchen', 'mudroom', 'foyer', 'bedroom', 'office', 'living-room', 'garage'];
 
 function defaultApartment() {
   return { dreamId: null, rooms: APARTMENT_ROOM_KEYS.map(key => ({ key, stepId: null })) };

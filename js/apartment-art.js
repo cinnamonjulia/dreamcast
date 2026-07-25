@@ -108,23 +108,23 @@ function kitchen() {
   <rect x="157" y="138" width="40" height="22" rx="3" fill="none" stroke="#98A0B2" stroke-width="1.8"/>
   <circle cx="198" cy="112" r="3" fill="#E8C87E" stroke="${INK}" stroke-width="1.3"/>
   <!-- teal chair behind the table -->
-  <rect x="218" y="102" width="26" height="36" rx="12" fill="#4FA8A4" stroke="${INK}" stroke-width="2"/>
-  <path d="M224 108 L224 132 M231 108 L231 132 M238 108 L238 132" stroke="#3D8A87" stroke-width="1.6"/>
+  <rect x="210" y="102" width="26" height="36" rx="12" fill="#4FA8A4" stroke="${INK}" stroke-width="2"/>
+  <path d="M216 108 L216 132 M223 108 L223 132 M230 108 L230 132" stroke="#3D8A87" stroke-width="1.6"/>
   <!-- black round table -->
-  <rect x="252" y="146" width="9" height="24" fill="#3E3A52" stroke="${INK}" stroke-width="1.4"/>
-  <path d="M240 168 L256 158 M273 168 L257 158" stroke="#3E3A52" stroke-width="4" stroke-linecap="round"/>
-  <ellipse cx="256" cy="140" rx="48" ry="11" fill="#474357" stroke="${INK}" stroke-width="2.2"/>
-  <path d="M214 144 Q256 156 298 144" fill="none" stroke="#332F47" stroke-width="2"/>
+  <rect x="244" y="146" width="9" height="24" fill="#3E3A52" stroke="${INK}" stroke-width="1.4"/>
+  <path d="M232 168 L248 158 M265 168 L249 158" stroke="#3E3A52" stroke-width="4" stroke-linecap="round"/>
+  <ellipse cx="248" cy="140" rx="44" ry="11" fill="#474357" stroke="${INK}" stroke-width="2.2"/>
+  <path d="M208 144 Q248 156 288 144" fill="none" stroke="#332F47" stroke-width="2"/>
   <!-- sunflowers in a vase -->
-  <path d="M247 122 Q243 136 253 136 Q263 136 259 122 Z" fill="#FDFCF8" stroke="${INK}" stroke-width="1.6"/>
-  <path d="M250 121 Q246 112 244 106 M253 121 L253 102 M256 121 Q260 112 263 108" fill="none" stroke="#7FA86A" stroke-width="1.8"/>
-  <circle cx="243" cy="103" r="6" fill="#F7C948" stroke="#D9A22E" stroke-width="1.5"/><circle cx="243" cy="103" r="2.2" fill="#7A5230"/>
-  <circle cx="253" cy="97" r="7" fill="#F7C948" stroke="#D9A22E" stroke-width="1.5"/><circle cx="253" cy="97" r="2.6" fill="#7A5230"/>
-  <circle cx="264" cy="105" r="5.5" fill="#F7C948" stroke="#D9A22E" stroke-width="1.5"/><circle cx="264" cy="105" r="2" fill="#7A5230"/>
-  <!-- teal chair in front -->
-  <rect x="286" y="110" width="15" height="44" rx="7" fill="#4FA8A4" stroke="${INK}" stroke-width="2"/>
-  <rect x="272" y="150" width="33" height="10" rx="5" fill="#4FA8A4" stroke="${INK}" stroke-width="2"/>
-  <path d="M276 160 L274 170 M300 160 L302 170" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M239 122 Q235 136 245 136 Q255 136 251 122 Z" fill="#FDFCF8" stroke="${INK}" stroke-width="1.6"/>
+  <path d="M242 121 Q238 112 236 106 M245 121 L245 102 M248 121 Q252 112 255 108" fill="none" stroke="#7FA86A" stroke-width="1.8"/>
+  <circle cx="235" cy="103" r="6" fill="#F7C948" stroke="#D9A22E" stroke-width="1.5"/><circle cx="235" cy="103" r="2.2" fill="#7A5230"/>
+  <circle cx="245" cy="97" r="7" fill="#F7C948" stroke="#D9A22E" stroke-width="1.5"/><circle cx="245" cy="97" r="2.6" fill="#7A5230"/>
+  <circle cx="256" cy="105" r="5.5" fill="#F7C948" stroke="#D9A22E" stroke-width="1.5"/><circle cx="256" cy="105" r="2" fill="#7A5230"/>
+  <!-- teal chair in front, clear of the wall -->
+  <rect x="274" y="110" width="14" height="44" rx="7" fill="#4FA8A4" stroke="${INK}" stroke-width="2"/>
+  <rect x="260" y="150" width="31" height="10" rx="5" fill="#4FA8A4" stroke="${INK}" stroke-width="2"/>
+  <path d="M264 160 L262 170 M286 160 L288 170" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/>
   </svg>`;
 }
 
@@ -433,6 +433,15 @@ function livingRoom() {
   <!-- TV above the fireplace -->
   <rect x="238" y="24" width="72" height="44" rx="3" fill="#3A3350" stroke="${INK}" stroke-width="2"/>
   <path d="M246 60 L296 32" stroke="#FFFFFF" stroke-width="4" opacity=".12"/>
+  <!-- tall fiddle-leaf fig peeking over the sofa's left corner -->
+  <path d="M60 158 L60 78" stroke="#8A6A48" stroke-width="2.6"/>
+  <path d="M52 148 L68 148 L66 164 L54 164 Z" fill="#E2AC88" stroke="${INK}" stroke-width="1.8"/>
+  <ellipse cx="48" cy="86" rx="9" ry="6" fill="#7FA86A" stroke="#5E8250" stroke-width="1.2" transform="rotate(-24 48 86)"/>
+  <ellipse cx="72" cy="80" rx="9" ry="6" fill="#8FBF84" stroke="#5E8250" stroke-width="1.2" transform="rotate(22 72 80)"/>
+  <ellipse cx="58" cy="70" rx="7" ry="9" fill="#9DC48F" stroke="#5E8250" stroke-width="1.2"/>
+  <ellipse cx="66" cy="94" rx="8" ry="5.5" fill="#8FBF84" stroke="#5E8250" stroke-width="1.2" transform="rotate(30 66 94)"/>
+  <ellipse cx="50" cy="104" rx="8" ry="5.5" fill="#7FA86A" stroke="#5E8250" stroke-width="1.2" transform="rotate(-32 50 104)"/>
+  <ellipse cx="63" cy="108" rx="7" ry="5" fill="#9DC48F" stroke="#5E8250" stroke-width="1.2" transform="rotate(18 63 108)"/>
   <!-- grey sectional with blanket + sleeping cat -->
   <rect x="58" y="110" width="16" height="48" rx="8" fill="#9BA3B0" stroke="${INK}" stroke-width="2"/>
   <rect x="204" y="110" width="16" height="48" rx="8" fill="#9BA3B0" stroke="${INK}" stroke-width="2"/>
@@ -442,16 +451,26 @@ function livingRoom() {
   <line x1="139" y1="128" x2="139" y2="156" stroke="#818996" stroke-width="1.8"/>
   <path d="M60 112 Q72 108 74 118 L74 148 Q66 152 60 148 Z" fill="#D8C7E8" stroke="${INK}" stroke-width="1.6"/>
   <path d="M63 118 L71 118 M63 126 L71 126 M63 134 L71 134" stroke="#B7A3D4" stroke-width="1.3"/>
-  <!-- the cat, curled up asleep -->
-  <ellipse cx="176" cy="118" rx="15" ry="9.5" fill="#A67858" stroke="${INK}" stroke-width="1.8"/>
-  <path d="M186 112 Q192 108 190 103 L185 107 Z" fill="#A67858" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
-  <path d="M178 108 L181 103 L184 108 Z" fill="#A67858" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
-  <path d="M163 120 Q159 126 166 127 Q174 128 175 124" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M182 112 Q184 114 186 112" fill="none" stroke="${INK}" stroke-width="1.3" stroke-linecap="round"/>
-  <path d="M170 114 Q173 112 176 114" fill="none" stroke="#8A5F42" stroke-width="1.3"/>
-  <!-- round wood coffee table -->
+  <!-- the orange tabby, curled up asleep on the couch -->
+  <path d="M166 120 Q157 126 165 130 Q173 133 180 128" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>
+  <path d="M166 120 Q157 126 165 130 Q173 133 180 128" fill="none" stroke="#E8975A" stroke-width="4.4" stroke-linecap="round"/>
+  <ellipse cx="177" cy="117" rx="16" ry="10.5" fill="#E8975A" stroke="${INK}" stroke-width="1.8"/>
+  <path d="M166 110 Q169 115 166 121 M172 108 Q175 113 172 120 M179 108 Q181 112 180 116" fill="none" stroke="#C97B3E" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M183 103 L185 96 L190 102 Z" fill="#E8975A" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M192 102 L197 97 L198 104 Z" fill="#E8975A" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M184.5 101 L185.5 98 L188 101 Z" fill="#F4A9C4"/>
+  <circle cx="190" cy="108" r="8" fill="#EDA268" stroke="${INK}" stroke-width="1.6"/>
+  <path d="M184 101 Q187 99 190 101 M191 101 Q194 99 196 102" fill="none" stroke="#C97B3E" stroke-width="1.3"/>
+  <path d="M185 108 Q186.5 109.6 188 108 M192 108 Q193.5 109.6 195 108" fill="none" stroke="${INK}" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M189.4 111 L190.6 111 L190 112 Z" fill="#D97B4F"/>
+  <path d="M197 110 L202 109 M197 112 L202 113" stroke="${INK}" stroke-width=".9" opacity=".55"/>
+  <!-- round wood coffee table with a little plant -->
   <ellipse cx="140" cy="184" rx="42" ry="9" fill="#D9A268" stroke="${INK}" stroke-width="2"/>
   <path d="M112 190 L108 204 M168 190 L172 204 M140 193 L140 206" stroke="#A8804C" stroke-width="3" stroke-linecap="round"/>
+  <path d="M135 172 L145 172 L143.5 180 L136.5 180 Z" fill="#E2AC88" stroke="${INK}" stroke-width="1.4"/>
+  <ellipse cx="135" cy="167" rx="4.5" ry="3" fill="#8FBF84" transform="rotate(-26 135 167)"/>
+  <ellipse cx="145" cy="167" rx="4.5" ry="3" fill="#9DC48F" transform="rotate(26 145 167)"/>
+  <ellipse cx="140" cy="163" rx="3" ry="4.5" fill="#7FA86A"/>
   <!-- white lamp (glow breathes) -->
   <ellipse class="anim-lamp" cx="228" cy="104" rx="16" ry="12" fill="#FFE9B8" opacity=".5"/>
   <path d="M218 92 L238 92 L242 112 L214 112 Z" fill="#FDF6E4" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>
@@ -468,6 +487,75 @@ function livingRoom() {
   <rect x="266" y="102" width="28" height="56" rx="4" fill="#3A3350" stroke="${INK}" stroke-width="2"/>
   <path class="anim-ember" d="M272 158 Q280 138 288 158 Z" fill="#F7C98F" opacity=".8"/>
   <rect x="270" y="152" width="20" height="5" rx="2.5" fill="#8A6A48" stroke="${INK}" stroke-width="1.2"/>
+  <!-- snake plant by the hearth -->
+  <path d="M247 168 L261 168 L259 156 L249 156 Z" fill="#D98A6A" stroke="${INK}" stroke-width="1.6"/>
+  <path d="M250 156 Q247 138 251 126 Q254 140 253 156 Z" fill="#7FA86A" stroke="#5E8250" stroke-width="1"/>
+  <path d="M254 156 Q253 132 257 120 Q260 136 258 156 Z" fill="#9DC48F" stroke="#5E8250" stroke-width="1"/>
+  <path d="M258 156 Q259 140 262 130 Q263 144 260 156 Z" fill="#8FBF84" stroke="#5E8250" stroke-width="1"/>
+  <!-- trailing vine spilling off the mantel -->
+  <path d="M300 82 Q306 96 302 110 Q299 120 303 130" fill="none" stroke="#7FA86A" stroke-width="1.6"/>
+  <ellipse cx="303" cy="92" rx="3.4" ry="2.2" fill="#8FBF84"/>
+  <ellipse cx="301" cy="106" rx="3.4" ry="2.2" fill="#9DC48F"/>
+  <ellipse cx="302" cy="122" rx="3.4" ry="2.2" fill="#8FBF84"/>
+  </svg>`;
+}
+
+/* ---------------- GARAGE (the tidy dream version) ----------------
+   white sectional door with windows, teal bike, pegboard of tools,
+   wood shelving with pastel bins, concrete floor, hanging bulb */
+function garage() {
+  let dots = '';
+  for (let dy = 50; dy <= 80; dy += 10) {
+    for (let dx = 168; dx <= 224; dx += 10) dots += `<circle cx="${dx}" cy="${dy}" r="1" fill="#C9BFA9"/>`;
+  }
+  return `${svgOpen}
+  <rect width="320" height="172" fill="#EFEAE0"/>
+  <rect x="0" y="172" width="320" height="48" fill="#CBC6BE"/>
+  <line x1="0" y1="172" x2="320" y2="172" stroke="${INK}" stroke-width="1.6" opacity=".55"/>
+  <line x1="80" y1="174" x2="76" y2="220" stroke="#B4AFA6" stroke-width="1.6"/>
+  <line x1="200" y1="174" x2="204" y2="220" stroke="#B4AFA6" stroke-width="1.6"/>
+  <!-- hanging bulb -->
+  <line x1="120" y1="0" x2="120" y2="22" stroke="${INK}" stroke-width="1.6"/>
+  <ellipse class="anim-lamp" cx="120" cy="30" rx="12" ry="10" fill="#FFE9B8" opacity=".5"/>
+  <circle cx="120" cy="28" r="6" fill="#FFF3D8" stroke="${INK}" stroke-width="1.6"/>
+  <!-- sectional garage door -->
+  <rect x="10" y="30" width="140" height="138" rx="4" fill="#FDFCF9" stroke="${INK}" stroke-width="2.2"/>
+  <rect x="16" y="38" width="128" height="26" rx="3" fill="none" stroke="#D9D2C6" stroke-width="1.8"/>
+  <rect x="24" y="44" width="24" height="14" rx="2" fill="${SKY}" stroke="${INK}" stroke-width="1.2"/>
+  <rect x="68" y="44" width="24" height="14" rx="2" fill="${SKY}" stroke="${INK}" stroke-width="1.2"/>
+  <rect x="112" y="44" width="24" height="14" rx="2" fill="${SKY}" stroke="${INK}" stroke-width="1.2"/>
+  <rect x="16" y="70" width="128" height="28" rx="3" fill="none" stroke="#D9D2C6" stroke-width="1.8"/>
+  <rect x="16" y="104" width="128" height="28" rx="3" fill="none" stroke="#D9D2C6" stroke-width="1.8"/>
+  <rect x="16" y="138" width="128" height="24" rx="3" fill="none" stroke="#D9D2C6" stroke-width="1.8"/>
+  <rect x="70" y="146" width="20" height="6" rx="3" fill="#C9CFDA" stroke="${INK}" stroke-width="1.3"/>
+  <!-- pegboard with tidy tools -->
+  <rect x="160" y="42" width="72" height="46" rx="3" fill="#E8DFCE" stroke="${INK}" stroke-width="1.8"/>
+  ${dots}
+  <path d="M174 54 L174 72 M169 54 L179 54" stroke="#8E96AA" stroke-width="3" stroke-linecap="round"/>
+  <path d="M196 52 L196 72 M196 52 Q191 48 193 44 M196 52 Q201 48 199 44" fill="none" stroke="#8E96AA" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M216 50 L216 70 M212 74 Q216 78 220 74" fill="none" stroke="#8E96AA" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- teal bike -->
+  <circle cx="176" cy="146" r="17" fill="none" stroke="${INK}" stroke-width="2.2"/>
+  <circle cx="224" cy="146" r="17" fill="none" stroke="${INK}" stroke-width="2.2"/>
+  <path d="M176 146 L168 132 M176 146 L184 158 M224 146 L216 130 M224 146 L232 156" stroke="#B4AFA6" stroke-width="1.2"/>
+  <path d="M176 146 L192 122 L216 122 L224 146 M176 146 L198 146 L192 122 M198 146 L216 122" fill="none" stroke="#4FA8A4" stroke-width="3.4" stroke-linejoin="round"/>
+  <path d="M188 118 L198 118" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M216 122 L212 112 Q216 108 222 110" fill="none" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- wood shelving with pastel bins -->
+  <path d="M244 58 L244 168 M310 58 L310 168" stroke="#C9A36A" stroke-width="4" stroke-linecap="round"/>
+  <path d="M242 66 L312 66 M242 100 L312 100 M242 134 L312 134 M242 168 L312 168" stroke="#C9A36A" stroke-width="4" stroke-linecap="round"/>
+  <rect x="249" y="76" width="26" height="22" rx="4" fill="#F5C6D8" stroke="${INK}" stroke-width="1.6"/>
+  <rect x="279" y="76" width="26" height="22" rx="4" fill="#C4D9F0" stroke="${INK}" stroke-width="1.6"/>
+  <rect x="249" y="110" width="26" height="22" rx="4" fill="#BFE3D3" stroke="${INK}" stroke-width="1.6"/>
+  <rect x="279" y="110" width="26" height="22" rx="4" fill="#D3C4EE" stroke="${INK}" stroke-width="1.6"/>
+  <path d="M254 86 L270 86 M284 86 L300 86 M254 120 L270 120 M284 120 L300 120" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+  <rect x="251" y="146" width="34" height="20" rx="3" fill="#E2B98A" stroke="${INK}" stroke-width="1.6"/>
+  <path d="M251 153 L285 153 M268 146 L268 153" stroke="#B98F5C" stroke-width="1.3"/>
+  <rect x="290" y="150" width="16" height="16" rx="3" fill="#EDCA9E" stroke="${INK}" stroke-width="1.6"/>
+  <!-- broom -->
+  <path d="M154 96 L146 158" stroke="#C9A36A" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M141 156 L152 156 L154 170 L136 170 Z" fill="#E8CF9E" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M141 160 L140 168 M146 160 L145 169 M150 160 L150 168" stroke="#C9A96A" stroke-width="1.2"/>
   </svg>`;
 }
 
@@ -478,6 +566,7 @@ export const ROOM_ART = {
   bedroom,
   office,
   'living-room': livingRoom,
+  garage,
 };
 
 /* ---------------- house chrome: roof, cloud base, extras ---------------- */
@@ -503,6 +592,16 @@ export function houseRoof() {
   <path d="M560 85 L560 115 M545 100 L575 100" stroke="${INK}" stroke-width="1.6" opacity=".7"/>
   ${star(500, 60, 6, '#FFFFFF')}
   ${star(640, 74, 5, '#FFE9B8')}
+  </svg>`;
+}
+
+export function garageRoof() {
+  let d = 'M 48 34';
+  for (let x = 48; x < 268; x += 44) d += ` Q ${x + 22} 54 ${x + 44} 34`;
+  return `<svg viewBox="0 0 320 92" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M10 90 Q20 26 70 20 L250 20 Q300 26 310 90 Z" fill="#F2C0D6" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+  <path d="${d}" fill="none" stroke="#E0A6C2" stroke-width="2.5" opacity=".7"/>
+  ${star(160, 44, 6, '#FFFFFF')}
   </svg>`;
 }
 

@@ -24,7 +24,7 @@ import {
   starBurst, randomizeFloat,
 } from './animations.js';
 
-import { ROOM_ART, houseRoof, houseBase, boxStack } from './apartment-art.js';
+import { ROOM_ART, houseRoof, garageRoof, houseBase, boxStack } from './apartment-art.js';
 
 let state = loadState();
 setMuteSource(() => state.settings.muted);
@@ -2420,6 +2420,7 @@ const APARTMENT_ROOM_META = [
   { key: 'bedroom', step: 'The Bedroom', label: 'Bedroom' },
   { key: 'office', step: 'The Office', label: 'Office' },
   { key: 'living-room', step: 'The Living Room', label: 'Living Room' },
+  { key: 'garage', step: 'The Garage', label: 'Garage' },
 ];
 const HOME_DREAM_TITLE = 'An Organized Home';
 
@@ -2493,7 +2494,7 @@ function renderApartment() {
   rooms.forEach(r => {
     openTotal += r.open;
     if (r.atPeace) peaceCount++;
-    const btn = document.querySelector(`#house-rooms .room[data-room="${r.key}"]`);
+    const btn = document.querySelector(`.dollhouse .room[data-room="${r.key}"]`);
     if (!btn) return;
     btn.querySelector('.room-count').textContent =
       r.open ? `· ${r.open} task${r.open === 1 ? '' : 's'}` : '';
@@ -2539,8 +2540,8 @@ function catchRoomPeace(dream, m, roomEl) {
   persist();
   milestoneCatch(roomEl).then(renderAll);
   setTimeout(renderAll, 500);
-  const allSix = state.apartment.rooms.every(r => dream.milestones.find(x => x.id === r.stepId)?.done);
-  if (allSix) {
+  const allRooms = state.apartment.rooms.every(r => dream.milestones.find(x => x.id === r.stepId)?.done);
+  if (allRooms) {
     confettiBurst(['#FBE18F', '#E3BE5C', '#FFFFFF', '#F77FBE']);
     toast('Your home is at peace ☮ — catch this dream?', {
       linkText: 'Catch it ✦', onLink: () => achieveDream(dream.id), duration: 9000,
@@ -2573,7 +2574,7 @@ function renderRoomPanel() {
   const r = apartmentRooms(dream).find(x => x.key === panelRoomKey);
   if (!r || !r.m) { panelRoomKey = null; panel.classList.remove('open'); return; }
   const m = r.m;
-  const roomBtn = document.querySelector(`#house-rooms .room[data-room="${r.key}"]`);
+  const roomBtn = document.querySelector(`.dollhouse .room[data-room="${r.key}"]`);
   const allDone = r.open === 0;
 
   const addInput = h('input', {
@@ -2676,8 +2677,9 @@ function wireApartment() {
   const roof = $('#house-roof');
   if (!roof) return;
   roof.innerHTML = houseRoof();
+  $('#garage-roof').innerHTML = garageRoof();
   $('#house-base').innerHTML = houseBase();
-  $$('#house-rooms .room').forEach(btn => {
+  $$('.dollhouse .room').forEach(btn => {
     const key = btn.dataset.room;
     const meta = APARTMENT_ROOM_META.find(x => x.key === key);
     btn.querySelector('.room-scene').innerHTML = ROOM_ART[key]();
