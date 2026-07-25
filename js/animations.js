@@ -489,7 +489,7 @@ function confettiStarSvg(color) {
   return `<svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 0 L7.4 4.6 L12 6 L7.4 7.4 L6 12 L4.6 7.4 L0 6 L4.6 4.6 Z" fill="${color}"/></svg>`;
 }
 
-export function confettiBurst(colors = ['#FFD98E', '#F77FBE', '#C3A6F1', '#6FA8DC', '#FFFFFF']) {
+export function confettiBurst(colors = ['#96D9F6', '#F77FBE', '#C3A6F1', '#6FA8DC', '#FFFFFF']) {
   if (REDUCED) return;
   const field = document.getElementById('confetti-field');
   for (let i = 0; i < 26; i++) {
@@ -513,7 +513,7 @@ export function sparkleTrail(fromEl, toEl) {
     const t = i / 8;
     const s = document.createElement('div');
     s.className = 'sparkle-trail-star';
-    s.innerHTML = confettiStarSvg(i % 2 ? '#F77FBE' : '#FFD98E');
+    s.innerHTML = confettiStarSvg(i % 2 ? '#F77FBE' : '#96D9F6');
     s.style.left = (a.x + (b.x - a.x) * t - 6) + 'px';
     s.style.top = (a.y + (b.y - a.y) * t - Math.sin(t * Math.PI) * 40 - 6) + 'px';
     s.style.animationDelay = (t * 0.35) + 's';
@@ -563,7 +563,7 @@ function confettiDrip() {
     c.style.left = Math.random() * 100 + 'vw';
     c.style.top = '-20px';
     c.style.animationDuration = (5 + Math.random() * 3) + 's';
-    c.innerHTML = confettiStarSvg(i % 2 ? '#FBD3E9' : '#FFD98E');
+    c.innerHTML = confettiStarSvg(i % 2 ? '#FBD3E9' : '#96D9F6');
     field.appendChild(c);
     setTimeout(() => c.remove(), 8500);
   }

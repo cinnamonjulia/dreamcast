@@ -3,7 +3,8 @@
    ============================================================ */
 
 export const STORAGE_KEY = 'dreamcast.v1';
-export const PALETTE = ['#F5A8C7', '#92BDE8', '#B79DE0', '#8ED8CE', '#A5D9A2', '#F7E08E', '#F7B884', '#D3C4EE'];
+/* cool-toned only — anchors + darks of the four Twilight Pop families */
+export const PALETTE = ['#E556EC', '#EF96F3', '#C265F8', '#D9A0FB', '#318EA3', '#7FB9C6', '#96D9F6', '#52C3F4'];
 
 export const uuid = () =>
   crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
@@ -41,13 +42,14 @@ export function pastelize(hex, amount = 0.65) {
   } catch { return '#FBD3E9'; }
 }
 
-/** Darken a color enough to be AA-readable on a pastel tint. */
-export function readableAccent(hex) {
+/** Darken a color enough to be AA-readable on a pastel tint.
+    Lower `target` = deeper: ~.38 ≈ accent (white text fits), ~.26 ≈ deep small-text. */
+export function readableAccent(hex, target = 0.62) {
   try {
     const { r, g, b } = hexToRgb(hex);
     const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-    if (lum < 0.62) return hex;
-    const mul = 0.62 / lum;
+    if (lum < target) return hex;
+    const mul = target / lum;
     const dark = c => Math.round(c * mul);
     return `rgb(${dark(r)}, ${dark(g)}, ${dark(b)})`;
   } catch { return '#8E97E8'; }
@@ -93,17 +95,18 @@ export function makeCategory(name, color, id = null) {
   return { id: id || uuid(), name, color, icon: null };
 }
 
-/* Julia's pastel category set */
+/* Julia's category set — Twilight Pop Pastel, every color inside the four
+   scope families (orchid · ocean teal · violet · sky), anchors on the flagships */
 const CATEGORY_SET = [
-  ['cat-career', 'Work', '#92BDE8'],       // pastel blue
-  ['cat-travel', 'Travel', '#B79DE0'],     // pastel purple
-  ['cat-health', 'Health', '#F7E08E'],     // pastel yellow
-  ['cat-home', 'Home', '#F5F1E8'],         // cloud white
-  ['cat-creative', 'Creative', '#F7B884'], // pastel orange
-  ['cat-love', 'Love', '#F5A8C7'],         // pastel pink
-  ['cat-friendship', 'Friendship', '#8ED8CE'], // pastel teal
-  ['cat-money', 'Finances', '#A5D9A2'],    // pastel green
-  ['cat-learning', 'Growth', '#D3C4EE'],   // pale purple
+  ['cat-career', 'Work', '#318EA3'],       // professional anchor (ocean teal)
+  ['cat-travel', 'Travel', '#52C3F4'],     // vivid sky
+  ['cat-health', 'Health', '#EF96F3'],     // orchid
+  ['cat-home', 'Home', '#96D9F6'],         // peace anchor (sky)
+  ['cat-creative', 'Creative', '#C265F8'], // passion anchor (violet)
+  ['cat-love', 'Love', '#E556EC'],         // personal anchor (orchid pop)
+  ['cat-friendship', 'Friendship', '#7FB9C6'], // soft teal
+  ['cat-money', 'Finances', '#B1D4DC'],    // pale teal
+  ['cat-learning', 'Growth', '#D9A0FB'],   // soft violet
 ];
 
 function seedCategories() {
@@ -254,6 +257,13 @@ function migrate(raw) {
       if (!have.has(id)) raw.categories.push({ id, name, color, icon: null });
     });
     raw.catsV2 = true;
+  }
+  // one-time recolor to the Twilight Pop Pastel palette (keeps ids & names,
+  // custom categories untouched)
+  if (!raw.catsV3 && Array.isArray(raw.categories)) {
+    const colors = new Map(CATEGORY_SET.map(([id, , color]) => [id, color]));
+    raw.categories.forEach(c => { const color = colors.get(c.id); if (color) c.color = color; });
+    raw.catsV3 = true;
   }
   // future: if (raw.version === 1) { ...upgrade...; raw.version = 2; }
   return raw;

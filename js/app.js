@@ -201,7 +201,10 @@ function renderFilters() {
     }),
     ...state.categories.map(cat =>
       h('button', {
-        class: 'chip' + (s.filterCategory === cat.id ? ' active' : ''),
+        class: 'chip cat-chip' + (s.filterCategory === cat.id ? ' active' : ''),
+        // pale/med/accent/deep tiers derived from the category color (custom picks included)
+        style: `--c-pale:${pastelize(cat.color, 0.72)};--c-med:${pastelize(cat.color, 0.52)};`
+          + `--c-accent:${readableAccent(cat.color, 0.38)};--c-deep:${readableAccent(cat.color, 0.26)}`,
         onclick: () => { s.filterCategory = s.filterCategory === cat.id ? null : cat.id; persist(); renderAll(); },
       },
         h('span', { class: 'cat-dot', style: `background:${cat.color}` }),
@@ -555,23 +558,45 @@ function safeHref(url) {
   return '#';
 }
 
-/* personal dreams are pink; the shorter the horizon, the deeper the shade */
+/* Twilight Pop Pastel (see PALETTE_SPEC.md) — six tiers per scope: the vivid
+   anchor stays reserved for small pops (progress fills, rings), surfaces wear
+   the pastel tiers, and accent/deep carry the hue in text */
+const SCOPE_COLORS = {
+  personal: {                          // orchid
+    anchor: '#E556EC', dark: '#EF96F3', medium: '#F5BFF8',
+    pale: '#FBE7FC', accent: '#B343B8', deep: '#833187',
+  },
+  professional: {                      // ocean teal
+    anchor: '#318EA3', dark: '#7FB9C6', medium: '#B1D4DC',
+    pale: '#E2EFF2', accent: '#2B7D90', deep: '#205C6A',
+  },
+  passion: {                           // violet — the apps she builds
+    anchor: '#C265F8', dark: '#D9A0FB', medium: '#E8C4FC',
+    pale: '#F6E9FE', accent: '#974FC2', deep: '#763E97',
+  },
+  peace: {                             // sky — home, order, self-care
+    anchor: '#96D9F6', dark: '#96D9F6', medium: '#D0EEFB',
+    pale: '#EFF9FE', accent: '#2F7EA1', deep: '#1F5C79',
+  },
+};
+
+/* card surfaces: mid-term wears the dark tier, long-term the medium */
 const SCOPE_TINTS = {
-  personal: {                          // cool rose
-    mid: 'rgba(240, 150, 209, .9)',
-    long: 'rgba(248, 213, 237, .88)',
+  personal: {
+    mid: 'rgba(239, 150, 243, .9)',
+    long: 'rgba(245, 191, 248, .88)',
   },
-  professional: {                      // blue
-    mid: 'rgba(126, 168, 230, .9)',
-    long: 'rgba(206, 224, 246, .88)',
+  professional: {
+    mid: 'rgba(127, 185, 198, .9)',
+    long: 'rgba(177, 212, 220, .88)',
   },
-  peace: {                             // warm gold — home, order, self-care
-    mid: 'rgba(244, 187, 100, .9)',
-    long: 'rgba(252, 231, 186, .88)',
+  peace: {
+    mid: 'rgba(150, 217, 246, .9)',
+    long: 'rgba(208, 238, 251, .88)',
   },
-  passion: {                           // aquamarine ocean teal — the apps she builds
-    mid: 'rgba(102, 182, 196, .9)',
-    long: 'rgba(200, 232, 238, .88)',
+  passion: {
+    mid: 'rgba(217, 160, 251, .9)',
+    long: 'rgba(232, 196, 252, .88)',
   },
 };
 
@@ -747,6 +772,7 @@ function openStepModal(dreamId, msId) {
 
 function renderCard(d) {
   const color = dreamColor(state, d);
+  const sc = SCOPE_COLORS[d.scope] || SCOPE_COLORS.personal;
   const cat = categoryOf(state, d);
   const pct = dreamProgress(d);
   const next = nextMilestone(d);
@@ -772,25 +798,25 @@ function renderCard(d) {
     h('button', {
       class: 'pin-star' + (d.pinned ? ' pinned' : ''),
       'aria-label': d.pinned ? 'Unpin dream' : 'Pin dream',
-      html: `<svg width="17" height="17" viewBox="0 0 20 20"><path d="M10 1 L12.2 7.6 L19 10 L12.2 12.4 L10 19 L7.8 12.4 L1 10 L7.8 7.6 Z" fill="${d.pinned ? '#FFD98E' : 'none'}" stroke="#B8854E" stroke-width="1.4"/></svg>`,
+      html: `<svg width="17" height="17" viewBox="0 0 20 20"><path d="M10 1 L12.2 7.6 L19 10 L12.2 12.4 L10 19 L7.8 12.4 L1 10 L7.8 7.6 Z" fill="${d.pinned ? '#C265F8' : 'none'}" stroke="#974FC2" stroke-width="1.4"/></svg>`,
       onclick: e => { e.stopPropagation(); d.pinned = !d.pinned; touch(d); persist(); sounds.tick(); renderAll(); },
     }),
     h('div', { class: 'card-top' },
       h('span', { class: 'cat-ribbon', style: `background:${cat?.color || color}`, title: cat?.name || '' }),
       h('h3', { class: 'card-title', text: d.title }),
-      h('span', { class: 'scope-glyph', title: d.scope, text: scopeGlyph(d.scope) }),
+      h('span', { class: 'scope-glyph', style: `color:${sc.deep}`, title: d.scope, text: scopeGlyph(d.scope) }),
       h('span', { class: 'horizon-tag' + (d.horizon === 'long' ? ' tag-long' : ''), text: d.horizon === 'mid' ? 'Mid' : 'Long' }),
     ),
     d.why ? h('p', { class: 'card-why', text: d.why }) : null,
     h('div', { class: 'progress-row' },
       h('div', { class: 'progress-track' },
-        h('div', { class: 'progress-fill', style: `width:${pct}%;background:${color}` }),
+        h('div', { class: 'progress-fill', style: `width:${pct}%;background:${sc.anchor}` }),
       ),
-      h('span', { class: 'progress-pct', style: `color:${readableAccent(color)}`, text: pct + '%' }),
+      h('span', { class: 'progress-pct', style: `color:${sc.deep}`, text: pct + '%' }),
     ),
     h('div', { class: 'card-next' },
       next
-        ? [h('span', { class: 'next-label', text: 'Next: ' }), document.createTextNode(next.text)]
+        ? [h('span', { class: 'next-label', style: `color:${sc.accent}`, text: 'Next: ' }), document.createTextNode(next.text)]
         : h('span', { style: 'opacity:.55', text: d.milestones.length ? 'All dream steps caught ✦' : 'No dream steps yet — add one?' }),
     ),
     d.links.length ? h('div', { class: 'card-links' },
@@ -803,7 +829,7 @@ function renderCard(d) {
         }, document.createTextNode((l.title || linkHost(l.url)) + ' ↗'))),
       d.links.length > 3 ? h('span', { class: 'card-link-more', text: `+${d.links.length - 3}` }) : null,
     ) : null,
-    h('div', { class: 'card-foot' },
+    h('div', { class: 'card-foot', style: `color:${sc.deep}` },
       h('span', { text: d.targetDate ? `target ${d.targetDate}` : '' }),
       h('span', { text: `last touched ${daysAgo(d.lastTouchedAt)}` }),
     ),
@@ -811,13 +837,12 @@ function renderCard(d) {
 
   const scopeTint = SCOPE_TINTS[d.scope] || SCOPE_TINTS.personal;
 
-  // dream steps: baby clouds in the same hue family as their parent —
-  // pink with pink, blue with blue, gold with gold, teal with teal
+  // dream steps: baby clouds in the palest wash of their parent's hue
   const STEP_TINTS = {
-    personal: 'rgba(252, 226, 242, .96)',
-    professional: 'rgba(224, 237, 250, .96)',
-    peace: 'rgba(253, 240, 213, .96)',
-    passion: 'rgba(223, 240, 244, .96)',
+    personal: 'rgba(251, 231, 252, .96)',
+    professional: 'rgba(226, 239, 242, .96)',
+    peace: 'rgba(239, 249, 254, .96)',
+    passion: 'rgba(246, 233, 254, .96)',
   };
   const steps = d.milestones.filter(m => !m.done);
   const stepTint = STEP_TINTS[d.scope] || STEP_TINTS.personal;
@@ -841,7 +866,7 @@ function renderCard(d) {
             (m.links || []).length ? h('span', { class: 'st-count', text: `${m.links.length} ↗` }) : null,
           ) : null,
           stTotal ? h('span', { class: 'step-progress' },
-            h('span', { class: 'step-progress-fill', style: `width:${pct}%;background:${scopeTint.mid}` })) : null,
+            h('span', { class: 'step-progress-fill', style: `width:${pct}%;background:${sc.anchor}` })) : null,
         );
       }),
       steps.length > 8 ? h('button', {
@@ -1274,7 +1299,7 @@ function achieveDream(id) {
   const dColor = dreamColor(state, d);
   achievedCelebration(cardEl, () => {
     renderAll();
-    confettiBurst([dColor, '#FFD98E', '#FFFFFF', pastelize(dColor, 0.4)]);
+    confettiBurst([dColor, '#96D9F6', '#FFFFFF', pastelize(dColor, 0.4)]);
     toast(`You caught: ${d.title} ✦`, { linkText: 'See it in the gallery', onLink: showGallery });
   });
 }
@@ -1792,10 +1817,10 @@ async function openSyncModal() {
 /* ---------- the peony: a petal per task done TODAY, colored by scope ---------- */
 
 const PETAL_COLORS = {
-  personal: ['#F7A8D3', '#E480B8'],      // pink
-  professional: ['#9FB6F2', '#7A93D6'],  // purple-blue
-  peace: ['#FBE18F', '#E3BE5C'],         // yellow
-  passion: ['#9BD6DE', '#6AB2C2'],       // aquamarine
+  personal: ['#EF96F3', '#B343B8'],      // orchid
+  professional: ['#7FB9C6', '#2B7D90'],  // ocean teal
+  peace: ['#96D9F6', '#2F7EA1'],         // sky
+  passion: ['#D9A0FB', '#974FC2'],       // violet
 };
 
 function localDateOf(iso) {
@@ -2542,7 +2567,7 @@ function catchRoomPeace(dream, m, roomEl) {
   setTimeout(renderAll, 500);
   const allRooms = state.apartment.rooms.every(r => dream.milestones.find(x => x.id === r.stepId)?.done);
   if (allRooms) {
-    confettiBurst(['#FBE18F', '#E3BE5C', '#FFFFFF', '#F77FBE']);
+    confettiBurst(['#96D9F6', '#52C3F4', '#FFFFFF', '#E556EC']);
     toast('Your home is at peace ☮ — catch this dream?', {
       linkText: 'Catch it ✦', onLink: () => achieveDream(dream.id), duration: 9000,
     });
