@@ -466,7 +466,7 @@ body[data-sparkle="3"] .bg-cloud {
 .tray-pill.pill-personal { background: rgba(247, 186, 226, .92); }
 .tray-pill.pill-professional { background: rgba(183, 208, 243, .92); }
 .tray-pill.pill-peace { background: rgba(250, 223, 170, .92); }
-.tray-pill.pill-passion { background: rgba(200, 234, 195, .92); }
+.tray-pill.pill-passion { background: rgba(174, 226, 223, .92); }
 
 /* scheduled subtask pills */
 .tray-pill.pill-subtask { border: 1.5px dashed rgba(43, 36, 64, .25); }
@@ -806,6 +806,56 @@ body[data-sparkle="3"] .bg-cloud {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ---- dream steps: baby clouds orbiting the dream, catchable in place ---- */
+.step-cloud {
+  position: absolute;
+  z-index: 3;
+  max-width: 138px;
+  border: none;
+  background: rgba(255, 255, 255, .94);
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  box-shadow: 0 6px 16px rgba(142, 151, 232, .35);
+  cursor: pointer;
+  animation: pill-bob 5s ease-in-out infinite;
+  transition: transform .18s, background .2s;
+}
+.step-cloud::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 22%;
+  width: 26px;
+  height: 14px;
+  border-radius: 50%;
+  background: inherit;
+}
+.step-cloud::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  right: 24%;
+  width: 18px;
+  height: 11px;
+  border-radius: 50%;
+  background: inherit;
+}
+.step-cloud:hover { transform: scale(1.1); background: #FFFFFF; z-index: 6; }
+.step-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sc-0 { top: -24px; right: 6%; animation-delay: -1.2s; }
+.sc-1 { left: -16px; top: 44%; animation-delay: -2.8s; }
+.sc-2 { bottom: -18px; right: 22%; animation-delay: -.6s; }
+.sc-3 { bottom: -16px; left: 10%; animation-delay: -2s; }
+.step-more { font-weight: 800; color: var(--periwinkle); }
 
 /* ============================ RECENT STRIP ============================ */
 

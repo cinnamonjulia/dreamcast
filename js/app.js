@@ -554,9 +554,9 @@ const SCOPE_TINTS = {
     mid: 'rgba(244, 187, 100, .9)',
     long: 'rgba(252, 231, 186, .88)',
   },
-  passion: {                           // green — the apps & things she builds
-    mid: 'rgba(150, 208, 148, .9)',
-    long: 'rgba(216, 240, 210, .88)',
+  passion: {                           // teal — the apps & things she builds
+    mid: 'rgba(88, 184, 181, .9)',
+    long: 'rgba(203, 236, 234, .88)',
   },
 };
 
@@ -567,6 +567,20 @@ const SCOPE_OPTIONS = [
   ['peace', '☮ Peace'], ['passion', '⌗ Passion'],
 ];
 const NEGLECT_DAYS = 5;
+
+/* catch a dream step (milestone) straight from the sky */
+function catchMilestoneFromSky(d, m) {
+  m.done = true;
+  m.doneAt = new Date().toISOString();
+  touch(d);
+  state.jar.push({ date: new Date().toISOString(), dreamId: d.id, kind: 'milestone', scope: d.scope });
+  bumpActivity(state);
+  persist();
+  const cardEl = document.querySelector(`.dream-card[data-id="${d.id}"]`);
+  cardEl?.querySelector('.progress-fill')?.classList.add('pulse');
+  milestoneCatch(cardEl).then(renderAll);
+  setTimeout(renderAll, 500);
+}
 
 function renderCard(d) {
   const color = dreamColor(state, d);
@@ -631,6 +645,25 @@ function renderCard(d) {
       h('span', { text: `last touched ${daysAgo(d.lastTouchedAt)}` }),
     ),
   );
+
+  // dream steps: unfinished milestones orbit the cloud as catchable baby clouds
+  const steps = d.milestones.filter(m => !m.done);
+  if (steps.length) {
+    card.append(h('div', { class: 'dream-steps', 'aria-hidden': 'false' },
+      ...steps.slice(0, 3).map((m, i) =>
+        h('button', {
+          class: `step-cloud sc-${i}`,
+          title: `Dream step: ${m.text} — click to catch it ✦`,
+          onclick: e => { e.stopPropagation(); catchMilestoneFromSky(d, m); },
+        }, h('span', { class: 'step-text', text: m.text }))),
+      steps.length > 3 ? h('button', {
+        class: 'step-cloud sc-3 step-more',
+        title: `${steps.length - 3} more steps — open the dream`,
+        text: `+${steps.length - 3}`,
+        onclick: e => { e.stopPropagation(); openDreamModal(d.id); },
+      }) : null,
+    ));
+  }
 
   const scopeTint = SCOPE_TINTS[d.scope] || SCOPE_TINTS.personal;
   card.style.setProperty('--tint', scopeTint[d.horizon] || scopeTint.mid);
@@ -1572,7 +1605,7 @@ const PETAL_COLORS = {
   personal: ['#F7A8D3', '#E480B8'],      // pink
   professional: ['#9FB6F2', '#7A93D6'],  // purple-blue
   peace: ['#FBE18F', '#E3BE5C'],         // yellow
-  passion: ['#A8DCA4', '#7FBF7C'],       // green
+  passion: ['#8ADAD5', '#5FB8B2'],       // teal
 };
 
 function localDateOf(iso) {
