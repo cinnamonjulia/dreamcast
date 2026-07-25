@@ -556,9 +556,9 @@ const SCOPE_TINTS = {
     mid: 'rgba(244, 187, 100, .9)',
     long: 'rgba(252, 231, 186, .88)',
   },
-  passion: {                           // misty teal — the apps & things she builds
-    mid: 'rgba(121, 184, 174, .9)',
-    long: 'rgba(205, 232, 226, .88)',
+  passion: {                           // aquamarine ocean teal — the apps she builds
+    mid: 'rgba(102, 182, 196, .9)',
+    long: 'rgba(200, 232, 238, .88)',
   },
 };
 
@@ -725,7 +725,7 @@ function renderCard(d) {
     h('div', { class: 'card-next' },
       next
         ? [h('span', { class: 'next-label', text: 'Next: ' }), document.createTextNode(next.text)]
-        : h('span', { style: 'opacity:.55', text: d.milestones.length ? 'All milestones caught ✦' : 'No milestones yet — add one?' }),
+        : h('span', { style: 'opacity:.55', text: d.milestones.length ? 'All dream steps caught ✦' : 'No dream steps yet — add one?' }),
     ),
     d.links.length ? h('div', { class: 'card-links' },
       ...d.links.slice(0, 3).map(l =>
@@ -751,13 +751,13 @@ function renderCard(d) {
     personal: 'rgba(252, 226, 242, .96)',
     professional: 'rgba(224, 237, 250, .96)',
     peace: 'rgba(253, 240, 213, .96)',
-    passion: 'rgba(224, 241, 237, .96)',
+    passion: 'rgba(223, 240, 244, .96)',
   };
   const steps = d.milestones.filter(m => !m.done);
   const stepTint = STEP_TINTS[d.scope] || STEP_TINTS.personal;
   if (steps.length) {
     card.append(h('div', { class: 'dream-steps', 'aria-hidden': 'false' },
-      ...steps.slice(0, 3).map((m, i) => {
+      ...steps.slice(0, 6).map((m, i) => {
         const stTotal = (m.subtasks || []).length;
         const stDone = (m.subtasks || []).filter(s => s.done).length;
         const pct = stTotal ? Math.round((stDone / stTotal) * 100) : 0;
@@ -776,10 +776,10 @@ function renderCard(d) {
             h('span', { class: 'step-progress-fill', style: `width:${pct}%;background:${scopeTint.mid}` })) : null,
         );
       }),
-      steps.length > 3 ? h('button', {
-        class: 'step-cloud sc-3 step-more',
-        title: `${steps.length - 3} more steps — open the dream`,
-        text: `+${steps.length - 3}`,
+      steps.length > 6 ? h('button', {
+        class: 'step-cloud sc-6 step-more',
+        title: `${steps.length - 6} more steps — open the dream`,
+        text: `+${steps.length - 6}`,
         onclick: e => { e.stopPropagation(); openDreamModal(d.id); },
       }) : null,
     ));
@@ -857,7 +857,7 @@ function renderJar() {
   const dreams = entries.filter(e => e.kind === 'achieved').length;
   const ms = entries.filter(e => e.kind === 'milestone').length;
   const quick = entries.filter(e => e.kind === 'quick').length;
-  $('#jar-button').title = `${dreams} dream${dreams === 1 ? '' : 's'} caught, ${ms} milestone${ms === 1 ? '' : 's'}, ${quick} quick goal${quick === 1 ? '' : 's'}`;
+  $('#jar-button').title = `${dreams} dream${dreams === 1 ? '' : 's'} caught, ${ms} dream step${ms === 1 ? '' : 's'}, ${quick} quick goal${quick === 1 ? '' : 's'}`;
 }
 
 /* ---------- mute ---------- */
@@ -996,12 +996,12 @@ function openDreamModal(id) {
               text: m.done ? '✓' : '',
               onclick: () => toggleMilestone(d, m),
             }),
-            h('span', { class: 'ms-text', text: m.text }),
+            h('button', { class: 'ms-text ms-text-btn', text: m.text, title: 'Open this dream step', onclick: () => openStepModal(d.id, m.id) }),
             (m.subtasks || []).length ? h('span', { class: 'st-count', text: `${m.subtasks.filter(s => s.done).length}/${m.subtasks.length}` }) : null,
             h('div', { class: 'ms-tools' },
               h('button', { text: '↑', 'aria-label': 'Move up', onclick: () => { if (i > 0) { d.milestones.splice(i - 1, 0, d.milestones.splice(i, 1)[0]); touch(d); persist(); renderMs(); renderAll(); } } }),
               h('button', { text: '↓', 'aria-label': 'Move down', onclick: () => { if (i < d.milestones.length - 1) { d.milestones.splice(i + 1, 0, d.milestones.splice(i, 1)[0]); touch(d); persist(); renderMs(); renderAll(); } } }),
-              h('button', { text: '✕', 'aria-label': 'Delete milestone', onclick: () => { d.milestones.splice(i, 1); touch(d); persist(); renderMs(); renderAll(); } }),
+              h('button', { text: '✕', 'aria-label': 'Delete dream step', onclick: () => { d.milestones.splice(i, 1); touch(d); persist(); renderMs(); renderAll(); } }),
             ),
           ),
           subtaskBlock(m),
@@ -1009,7 +1009,7 @@ function openDreamModal(id) {
       ),
     );
 
-    const addInput = h('input', { type: 'text', placeholder: 'Add a milestone…', maxlength: '160' });
+    const addInput = h('input', { type: 'text', placeholder: 'Add a dream step…', maxlength: '160' });
     const addForm = h('form', {
       class: 'ms-add',
       onsubmit: e => {
@@ -1022,7 +1022,7 @@ function openDreamModal(id) {
       },
     }, addInput, h('button', { class: 'btn btn-secondary', type: 'submit', text: 'Add' }));
 
-    const children = [h('h3', { text: 'Milestones' }), list, addForm];
+    const children = [h('h3', { text: 'Dream Steps' }), list, addForm];
 
     if (!d.milestones.length) {
       children.push(
@@ -1724,7 +1724,7 @@ const PETAL_COLORS = {
   personal: ['#F7A8D3', '#E480B8'],      // pink
   professional: ['#9FB6F2', '#7A93D6'],  // purple-blue
   peace: ['#FBE18F', '#E3BE5C'],         // yellow
-  passion: ['#A9D6CE', '#79B8AE'],       // misty teal
+  passion: ['#9BD6DE', '#6AB2C2'],       // aquamarine
 };
 
 function localDateOf(iso) {

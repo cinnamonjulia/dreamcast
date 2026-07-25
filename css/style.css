@@ -466,7 +466,7 @@ body[data-sparkle="3"] .bg-cloud {
 .tray-pill.pill-personal { background: rgba(247, 186, 226, .92); }
 .tray-pill.pill-professional { background: rgba(183, 208, 243, .92); }
 .tray-pill.pill-peace { background: rgba(250, 223, 170, .92); }
-.tray-pill.pill-passion { background: rgba(174, 226, 223, .92); }
+.tray-pill.pill-passion { background: rgba(168, 220, 229, .92); }
 
 /* scheduled subtask pills */
 .tray-pill.pill-subtask { border: 1.5px dashed rgba(43, 36, 64, .25); }
@@ -866,10 +866,13 @@ body[data-sparkle="3"] .bg-cloud {
 }
 .step-progress-fill { display: block; height: 100%; border-radius: 999px; }
 
-.sc-0 { top: -26px; right: 10%; animation-delay: -1.2s; }
-.sc-1 { left: -12px; top: 46%; animation-delay: -2.8s; }
-.sc-2 { bottom: -18px; right: 24%; animation-delay: -.6s; }
-.sc-3 { bottom: -14px; left: 12%; animation-delay: -2s; }
+.sc-0 { top: -26px; right: 8%; animation-delay: -1.2s; }
+.sc-1 { left: -12px; top: 42%; animation-delay: -2.8s; }
+.sc-2 { bottom: -18px; right: 22%; animation-delay: -.6s; }
+.sc-3 { bottom: -14px; left: 6%; animation-delay: -2s; }
+.sc-4 { top: -22px; left: 14%; animation-delay: -3.6s; }
+.sc-5 { right: -14px; top: 36%; animation-delay: -1.8s; }
+.sc-6 { bottom: -20px; left: 40%; animation-delay: -3s; }
 .step-more { font-weight: 800; color: var(--periwinkle); flex-direction: row; min-width: 0; }
 
 /* ============================ RECENT STRIP ============================ */
@@ -1100,6 +1103,8 @@ body[data-sparkle="3"] .bg-cloud {
 .ms-list { list-style: none; margin: 0; padding: 0; }
 .ms-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
 .ms-item .ms-text { flex: 1; font-size: 14px; }
+.ms-text-btn { background: none; border: none; padding: 0; text-align: left; font: inherit; cursor: pointer; }
+.ms-text-btn:hover { color: var(--pink); }
 .ms-item.done .ms-text { text-decoration: line-through; opacity: .55; }
 .ms-check {
   width: 22px; height: 22px;
