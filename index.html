@@ -273,6 +273,47 @@
   <span>The Fridge</span>
 </button>
 
+<!-- ======================= THE APARTMENT DOCK ======================= -->
+<button id="apartment-dock" aria-label="Open The Apartment">
+  <svg viewBox="0 0 30 40" width="24" height="32" aria-hidden="true">
+    <rect x="19.5" y="8" width="4" height="8" fill="#E3B49E" stroke="#2B2440" stroke-width="1.2"/>
+    <path d="M4 19 L4 34 Q4 37 7 37 L23 37 Q26 37 26 34 L26 19 Z" fill="#FBEFF6" stroke="#2B2440" stroke-width="1.6"/>
+    <path d="M2.5 20 Q15 3 27.5 20" fill="none" stroke="#F2A9CC" stroke-width="4" stroke-linecap="round"/>
+    <path d="M2.5 20 Q15 3 27.5 20" fill="none" stroke="#2B2440" stroke-width="1.2" opacity=".55"/>
+    <rect x="11.5" y="23" width="7" height="8" rx="2" fill="#FFD98E" stroke="#2B2440" stroke-width="1.3"/>
+    <path d="M21.5 2 l1 2.1 2.1 1 -2.1 1 -1 2.1 -1 -2.1 -2.1 -1 2.1 -1 Z" fill="#FFD98E"/>
+  </svg>
+  <span>The Apartment</span>
+</button>
+
+<!-- ======================= THE APARTMENT ======================= -->
+<section id="apartment-view" hidden>
+  <div class="gallery-head">
+    <button id="apartment-back" class="chip">← Back to the sky</button>
+    <h2>The Apartment ☮</h2>
+    <span id="apartment-summary" class="fridge-summary"></span>
+  </div>
+  <div class="apartment-stage">
+    <div class="dollhouse">
+      <div class="house-roof" id="house-roof" aria-hidden="true"></div>
+      <div class="house-rooms" id="house-rooms">
+        <button class="room" data-room="bedroom"><span class="room-scene" aria-hidden="true"></span></button>
+        <button class="room" data-room="office"><span class="room-scene" aria-hidden="true"></span></button>
+        <button class="room" data-room="living-room"><span class="room-scene" aria-hidden="true"></span></button>
+        <button class="room" data-room="foyer"><span class="room-scene" aria-hidden="true"></span></button>
+        <button class="room" data-room="kitchen"><span class="room-scene" aria-hidden="true"></span></button>
+        <button class="room" data-room="mudroom"><span class="room-scene" aria-hidden="true"></span></button>
+      </div>
+      <div class="house-base" id="house-base" aria-hidden="true"></div>
+    </div>
+    <button id="home-progress" title="Open the dream">
+      <span class="hp-track"><span class="hp-fill" id="hp-fill"></span></span>
+      <span class="hp-label" id="hp-label"></span>
+    </button>
+  </div>
+  <aside id="room-panel" aria-label="Room tidy list"></aside>
+</section>
+
 <!-- ======================= THE FRIDGE ======================= -->
 <section id="fridge-view" hidden>
   <div class="gallery-head">

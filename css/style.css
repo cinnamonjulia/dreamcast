@@ -807,12 +807,14 @@ body[data-sparkle="3"] .bg-cloud {
   white-space: nowrap;
 }
 
-/* ---- dream steps: baby clouds nestled at the base of their dream ---- */
+/* ---- dream steps: baby clouds nestled at the base of their dream ----
+   flex-wrap so a step with a longer name widens (up to the full row)
+   and always shows a readable line of text */
 .dream-steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
   gap: 10px 8px;
-  align-items: start;
   margin: 12px -8px -16px;
   position: relative;
   z-index: 3;
@@ -823,13 +825,14 @@ body[data-sparkle="3"] .bg-cloud {
   flex-direction: column;
   align-items: stretch;
   gap: 4px;
-  width: 100%;
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: 30%;
+  max-width: 100%;
   border: none;
   background: rgba(255, 255, 255, .94);
   border-radius: 16px;
   padding: 7px 11px;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--ink);
   box-shadow: 0 6px 16px rgba(142, 151, 232, .35);
@@ -859,15 +862,15 @@ body[data-sparkle="3"] .bg-cloud {
 }
 .step-cloud:hover { transform: scale(1.1); background: #FFFFFF; z-index: 6; }
 .step-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  display: block;
+  white-space: nowrap;
   overflow: hidden;
-  white-space: normal;
-  line-height: 1.3;
+  text-overflow: ellipsis;
+  line-height: 1.35;
   text-align: left;
 }
-.step-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.step-row { display: flex; align-items: center; flex-wrap: wrap; gap: 3px 5px; min-width: 0; }
+.step-row .st-count { font-size: 9.5px; padding: 0 6px; }
 .step-progress {
   display: block;
   height: 5px;
@@ -1275,7 +1278,7 @@ body[data-sparkle="3"] .bg-cloud {
 
 /* ============================ THE FRIDGE ============================ */
 
-#fridge-dock {
+#fridge-dock, #apartment-dock {
   position: fixed;
   bottom: 20px;
   left: 20px;
@@ -1295,7 +1298,8 @@ body[data-sparkle="3"] .bg-cloud {
   box-shadow: 0 8px 26px rgba(142, 151, 232, .4);
   transition: transform .2s, box-shadow .2s;
 }
-#fridge-dock:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(142, 151, 232, .55); }
+#fridge-dock:hover, #apartment-dock:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(142, 151, 232, .55); }
+#apartment-dock { left: 172px; }
 
 #fridge-view { margin: 20px 40px 60px; position: relative; min-height: 70vh; }
 .fridge-summary { font-size: 13px; font-weight: 700; color: var(--periwinkle); }
@@ -1318,8 +1322,10 @@ body[data-sparkle="3"] .bg-cloud {
   transition: background .15s, border-color .15s, transform .15s;
 }
 .drop-zone.zone-trash { border-color: rgba(247, 127, 190, .5); color: var(--pink, #F77FBE); }
+.drop-zone.zone-done { border-color: rgba(126, 190, 122, .55); color: #5E9B5B; }
 .drop-zone.drag-over { background: rgba(142, 151, 232, .14); border-style: solid; transform: scale(1.02); }
 .drop-zone.zone-trash.drag-over { background: rgba(247, 127, 190, .14); }
+.drop-zone.zone-done.drag-over { background: rgba(165, 217, 162, .18); }
 .zone-date { border: none; background: transparent; font: inherit; color: inherit; cursor: pointer; }
 .rollover-item[draggable="true"], .log-row[draggable="true"] { cursor: grab; }
 .rollover-item[draggable="true"]:active, .log-row[draggable="true"]:active { cursor: grabbing; }
@@ -1336,10 +1342,10 @@ body[data-sparkle="3"] .bg-cloud {
 /* staples checklist */
 .staples-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px 16px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px 10px;
   margin-top: 10px;
-  max-height: 46vh;
+  max-height: 56vh;
   overflow-y: auto;
 }
 .staple-check {
@@ -1568,6 +1574,300 @@ body[data-sparkle="3"] .bg-cloud {
 }
 .fridge-julia img { width: 100%; height: 100%; object-fit: cover; }
 
+/* ============================ THE APARTMENT ============================ */
+
+#apartment-view { margin: 20px 40px 60px; position: relative; }
+
+.apartment-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform .4s cubic-bezier(.34, 1.1, .5, 1);
+}
+#apartment-view.panel-open .apartment-stage { transform: translateX(-180px); }
+
+.dollhouse {
+  width: min(1060px, calc(100vw - 90px));
+  position: relative;
+  animation: house-bob 9s ease-in-out infinite;
+}
+@keyframes house-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+.house-roof { margin: 0 -3.5%; }
+.house-roof svg { display: block; width: 100%; height: auto; }
+
+.house-rooms {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: #F7EFE0;
+  border: 3px solid var(--ink);
+  border-radius: 4px 4px 22px 22px;
+  padding: 10px;
+  gap: 0;
+  margin-top: -14px;
+  box-shadow: 0 24px 70px rgba(142, 151, 232, .4);
+}
+/* wood floor band between the storeys */
+.house-rooms .room:nth-child(-n+3) { border-bottom: 8px solid #C99B62; }
+.house-rooms .room:nth-child(2), .house-rooms .room:nth-child(5) {
+  border-left: 5px solid #F1E5CF;
+  border-right: 5px solid #F1E5CF;
+}
+
+.room {
+  position: relative;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  aspect-ratio: 320 / 214;
+  overflow: hidden;
+}
+.room-scene { position: absolute; inset: 0; display: block; }
+.room-scene svg { display: block; width: 100%; height: 100%; }
+
+/* hover / focus: the room brightens, its label floats up */
+.room::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #FFFFFF;
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+}
+.room:hover::after, .room:focus-visible::after { opacity: .09; }
+.room:focus-visible { box-shadow: inset 0 0 0 3px rgba(247, 127, 190, .65); border-radius: 6px; }
+
+.room-label {
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, .93);
+  border-radius: 999px;
+  padding: 4px 13px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  box-shadow: 0 4px 12px rgba(142, 151, 232, .35);
+  transition: transform .25s;
+  pointer-events: none;
+}
+.room:hover .room-label, .room:focus-visible .room-label { transform: translateX(-50%) translateY(-4px); }
+.room-count { color: var(--periwinkle); font-size: 11px; }
+.room-peace-badge { color: #C99A2E; font-size: 12px; }
+
+/* room at peace: warmer light + tiny gold glints */
+.room.at-peace .room-scene svg { filter: saturate(1.08) brightness(1.05) sepia(.06); }
+.room.at-peace .room-scene::before,
+.room.at-peace .room-scene::after {
+  position: absolute;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(255, 217, 142, .9);
+  font-size: 13px;
+  animation: peace-twinkle 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+.room.at-peace .room-scene::before { content: '✦'; top: 12%; left: 12%; }
+.room.at-peace .room-scene::after { content: '✦'; top: 22%; right: 14%; font-size: 10px; animation-delay: -1.4s; }
+@keyframes peace-twinkle { 0%, 100% { opacity: .25; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+
+/* one-time tidy shimmer when a room reaches peace */
+.room.shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: linear-gradient(115deg, transparent 25%, rgba(255, 255, 255, .8) 50%, transparent 75%);
+  background-size: 260% 100%;
+  animation: room-shimmer 1.25s ease forwards;
+  pointer-events: none;
+}
+@keyframes room-shimmer { from { background-position: 130% 0; } to { background-position: -130% 0; } }
+
+/* neat stack of moving boxes when a room has a lot to do — never shame */
+.room-boxes { position: absolute; right: 9px; bottom: 34px; z-index: 2; opacity: .9; pointer-events: none; }
+
+.house-base { margin: -26px -2% 0; position: relative; z-index: 1; }
+.house-base svg { display: block; width: 100%; height: auto; }
+
+/* the dream's progress, in peace gold */
+#home-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(560px, 72%);
+  margin-top: 4px;
+  border: none;
+  background: rgba(255, 255, 255, .62);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  padding: 13px 28px;
+  box-shadow: 0 8px 28px rgba(227, 190, 92, .35);
+  transition: transform .18s, box-shadow .2s;
+}
+#home-progress:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(227, 190, 92, .5); }
+.hp-track {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(227, 190, 92, .22);
+  overflow: hidden;
+}
+.hp-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #FBE18F, #E3BE5C);
+  transition: width .6s cubic-bezier(.34, 1.3, .5, 1);
+}
+.hp-label { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #A07F2E; }
+
+/* ---- the room panel: slides in from the right ---- */
+#room-panel {
+  position: fixed;
+  top: 96px;
+  right: 20px;
+  bottom: 20px;
+  width: 380px;
+  z-index: 50;
+  background: rgba(255, 255, 255, .94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 24px;
+  box-shadow: var(--card-shadow);
+  padding: 18px 20px 20px;
+  overflow-y: auto;
+  transform: translateX(calc(100% + 44px));
+  transition: transform .38s cubic-bezier(.34, 1.15, .5, 1);
+}
+#room-panel.open { transform: none; }
+
+.rp-close {
+  position: absolute;
+  top: 12px; right: 12px;
+  z-index: 2;
+  border: none;
+  background: rgba(195, 166, 241, .2);
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  font-size: 14px;
+  line-height: 1;
+}
+.rp-close:hover { background: var(--pink-soft); }
+
+.rp-portrait {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2.5px solid rgba(201, 155, 98, .5);
+  box-shadow: 0 8px 22px rgba(142, 151, 232, .3);
+}
+.rp-portrait svg { display: block; width: 100%; height: auto; }
+
+.rp-head { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 2px; }
+.rp-head h2 { margin: 0; font-family: var(--font-display); font-size: 20px; }
+.rp-peace { color: #C99A2E; font-weight: 800; font-size: 15px; }
+
+.rp-progress { display: flex; align-items: center; gap: 10px; margin: 6px 0 12px; }
+.rp-progress .hp-track { height: 9px; flex: 1; }
+.rp-progress-label { font-size: 11.5px; font-weight: 800; color: #A07F2E; white-space: nowrap; }
+
+.rp-tasks { list-style: none; margin: 0; padding: 0; }
+.rp-task {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 0;
+  border-bottom: 1px dashed rgba(142, 151, 232, .3);
+}
+.rp-task.done .rp-task-text { text-decoration: line-through; opacity: .5; }
+.rp-task-text {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.rp-task-text:hover { color: var(--pink); }
+.rp-empty { font-size: 13px; opacity: .6; font-style: italic; margin: 10px 0; }
+
+.rp-add { display: flex; gap: 7px; margin: 12px 0 4px; }
+.rp-add input {
+  flex: 1;
+  border: 1.5px dashed rgba(142, 151, 232, .5);
+  background: rgba(255, 255, 255, .7);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  outline: none;
+}
+.rp-add input:focus { border-color: var(--pink); border-style: solid; background: var(--white); }
+
+.rp-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1.5px solid rgba(142, 151, 232, .25); }
+.btn-peace {
+  background: linear-gradient(95deg, #FBE18F, #EFCB6B);
+  color: #6B5313;
+  box-shadow: 0 5px 16px rgba(227, 190, 92, .45);
+}
+.btn-peace:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ---- ambient life inside the rooms ---- */
+#apartment-view .anim-steam { animation: apt-steam 3.6s ease-in-out infinite; }
+@keyframes apt-steam {
+  0% { transform: translateY(3px); opacity: 0; }
+  35% { opacity: .8; }
+  100% { transform: translateY(-9px); opacity: 0; }
+}
+#apartment-view .anim-glint { animation: apt-glint 4.5s ease-in-out infinite; }
+@keyframes apt-glint {
+  0%, 100% { opacity: .2; }
+  50% { opacity: .85; }
+}
+#apartment-view .anim-glow { animation: apt-glow 5s ease-in-out infinite; }
+#apartment-view .anim-lamp { animation: apt-glow 4s ease-in-out infinite; }
+#apartment-view .anim-ember { animation: apt-glow 2.6s ease-in-out infinite; }
+@keyframes apt-glow {
+  0%, 100% { opacity: .45; }
+  50% { opacity: .95; }
+}
+#apartment-view .anim-sway {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: apt-sway 6.5s ease-in-out infinite;
+}
+@keyframes apt-sway {
+  0%, 100% { transform: rotate(-1deg); }
+  50% { transform: rotate(1.2deg); }
+}
+#apartment-view .anim-plant {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: apt-sway 5.5s ease-in-out infinite;
+}
+#apartment-view .anim-tw1 { animation: peace-twinkle 3.2s ease-in-out infinite; }
+#apartment-view .anim-tw2 { animation: peace-twinkle 3.2s ease-in-out -1.6s infinite; }
+#apartment-view .anim-smoke-1 { animation: apt-smoke 5s ease-in-out infinite; }
+#apartment-view .anim-smoke-2 { animation: apt-smoke 5s ease-in-out -1.7s infinite; }
+#apartment-view .anim-smoke-3 { animation: apt-smoke 5s ease-in-out -3.4s infinite; }
+@keyframes apt-smoke {
+  0% { transform: translateY(8px) scale(.7); opacity: 0; }
+  30% { opacity: .95; }
+  100% { transform: translateY(-14px) scale(1.1); opacity: 0; }
+}
+
 /* ============================ TOASTS ============================ */
 
 #toast-root {
@@ -1626,7 +1926,9 @@ body[data-sparkle="3"] .bg-cloud {
   .rain span,
   .dream-card, .tray-pill, .horizon-bubble, #julia-perch,
   #julia-avatar #hair, #julia-avatar #legs #leg-1, #julia-avatar #legs #leg-2,
-  .gallery-orb .orb-visual, .bg-cloud, .logo-star, .progress-fill::after {
+  .gallery-orb .orb-visual, .bg-cloud, .logo-star, .progress-fill::after,
+  .dollhouse, #apartment-view [class*="anim-"], .room.shimmer::before,
+  .room.at-peace .room-scene::before, .room.at-peace .room-scene::after {
     animation: none !important;
   }
   html { scroll-behavior: auto; }

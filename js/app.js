@@ -21,8 +21,10 @@ import {
   startIdleLife, startAmbientSky, perkUp, happyBounce,
   castTo, castToCard, reelIn, milestoneCatch, miniCatch,
   achievedCelebration, newDreamCast, sparkleTrail, confettiBurst,
-  randomizeFloat,
+  starBurst, randomizeFloat,
 } from './animations.js';
+
+import { ROOM_ART, houseRoof, houseBase, boxStack } from './apartment-art.js';
 
 let state = loadState();
 setMuteSource(() => state.settings.muted);
@@ -164,6 +166,7 @@ function renderAll() {
   renderMute();
   updateSparkle();
   if (!$('#fridge-view').hidden) renderFridge();
+  if (!$('#apartment-view').hidden) renderApartment();
   $('#gallery-count').textContent =
     state.dreams.filter(d => d.status === 'achieved' && d.horizon !== 'short').length;
   if (!$('#gallery-view').hidden) renderGallery();
@@ -831,12 +834,12 @@ function renderCard(d) {
           title: `Dream step: ${m.text}${effDue ? ` · due ${effDue}${m.dueDate ? '' : ' (from the dream)'}` : ''} — click to open`,
           onclick: e => { e.stopPropagation(); openStepModal(d.id, m.id); },
         },
-          h('span', { class: 'step-row' },
-            h('span', { class: 'step-text', text: m.text }),
+          h('span', { class: 'step-text', text: m.text }),
+          (effDue || stTotal || (m.links || []).length) ? h('span', { class: 'step-row' },
             effDue ? h('span', { class: 'st-count' + (m.dueDate ? '' : ' st-inherited'), text: effDue.slice(5).replace('-', '/') }) : null,
             stTotal ? h('span', { class: 'st-count', text: `${stDone}/${stTotal}` }) : null,
             (m.links || []).length ? h('span', { class: 'st-count', text: `${m.links.length} ↗` }) : null,
-          ),
+          ) : null,
           stTotal ? h('span', { class: 'step-progress' },
             h('span', { class: 'step-progress-fill', style: `width:${pct}%;background:${scopeTint.mid}` })) : null,
         );
@@ -951,7 +954,10 @@ function openModal(contentEl, { slim = false } = {}) {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') {
+    if ($('#modal-root').childElementCount) closeModal();
+    else closeRoomPanel();
+  }
 });
 
 /* ---------- shared field builders ---------- */
@@ -1879,8 +1885,10 @@ function dropZones(handlers) {
     return z;
   };
   return h('div', { class: 'drop-zones' },
+    makeZone('zone-done', hnd => hnd.done?.(),
+      h('span', { text: '✓ drop here → done' })),
     makeZone('zone-future', hnd => hnd.future(dateIn.value || tomorrowISO()),
-      h('span', { text: '🗓 drop here → the future' }), dateIn),
+      h('span', { text: '🗓 drop here → tomorrow, or' }), dateIn),
     makeZone('zone-trash', hnd => hnd.trash(),
       h('span', { text: '🗑 drop here → let it go' })),
   );
@@ -1943,6 +1951,7 @@ function openTasksModal() {
   const handlers = new Map();
   const refresh = () => { persist(); renderAll(); closeModal(); openTasksModal(); };
   [...upcoming, ...inFlight].forEach(u => handlers.set(u.id, {
+    done: () => { closeModal(); u.complete(); toast('Caught it ✦'); },
     future: v => { u.reschedule(v); refresh(); toast('Sent to the future ✦'); },
     trash: () => { u.trash(); refresh(); toast('Let it go 🗑'); },
   }));
@@ -1951,9 +1960,9 @@ function openTasksModal() {
 
   openModal(h('div', {},
     h('h2', { text: 'Task log ✦' }),
-    h('p', { style: 'font-size:13px;opacity:.7', text: 'Drag any task onto a zone below — pick a date to send it to the future, or let it go.' }),
+    h('p', { style: 'font-size:13px;opacity:.7', text: 'Drag any task onto a zone below — catch it done, send it to tomorrow (or any date), or let it go.' }),
     dropZones(handlers),
-    h('h3', { text: 'Still in flight — not caught yet' }),
+    h('h3', { text: 'Yesterday\'s Tasks (and others still in flight)' }),
     inFlight.length ? h('ul', { class: 'updates-list log-list' },
       ...inFlight.slice(0, 40).map(u => h('li', rowBase(u),
         u.overdue
@@ -2342,8 +2351,11 @@ function clearExpired() {
 }
 
 function showFridge() {
+  closeRoomPanel();
   $('#main-view').hidden = true;
   $('#gallery-view').hidden = true;
+  $('#apartment-view').hidden = true;
+  $('#apartment-dock').hidden = false;
   $('#fridge-view').hidden = false;
   $('#fridge-dock').hidden = true;
   renderFridge();
@@ -2356,9 +2368,27 @@ function hideFridge() {
   $('#fridge-dock').hidden = false;
 }
 
+/* the fridge remembers whether the apartment sent you — back goes home */
+function backFromFridge() {
+  const from = fridgeFrom;
+  fridgeFrom = null;
+  $('#fridge-back').textContent = '← Back to the sky';
+  if (from === 'apartment') {
+    $('#fridge-view').hidden = true;
+    $('#fridge-dock').hidden = false;
+    showApartment();
+  } else {
+    hideFridge();
+  }
+}
+
 function wireFridge() {
-  $('#fridge-dock')?.addEventListener('click', showFridge);
-  $('#fridge-back')?.addEventListener('click', hideFridge);
+  $('#fridge-dock')?.addEventListener('click', () => {
+    fridgeFrom = null;
+    $('#fridge-back').textContent = '← Back to the sky';
+    showFridge();
+  });
+  $('#fridge-back')?.addEventListener('click', backFromFridge);
   $('#stock-kitchen')?.addEventListener('click', openStockModal);
   $('#staples-btn')?.addEventListener('click', openStaplesModal);
   $('#recipe-ideas')?.addEventListener('click', openRecipeIdeasModal);
@@ -2381,11 +2411,307 @@ function wireFridge() {
   });
 }
 
+/* ---------- the apartment: a dollhouse view of one ☮ dream ---------- */
+
+const APARTMENT_ROOM_META = [
+  { key: 'kitchen', step: 'The Kitchen', label: 'Kitchen' },
+  { key: 'mudroom', step: 'The Mudroom', label: 'Mudroom' },
+  { key: 'foyer', step: 'The Foyer', label: 'Foyer' },
+  { key: 'bedroom', step: 'The Bedroom', label: 'Bedroom' },
+  { key: 'office', step: 'The Office', label: 'Office' },
+  { key: 'living-room', step: 'The Living Room', label: 'Living Room' },
+];
+const HOME_DREAM_TITLE = 'An Organized Home';
+
+let panelRoomKey = null;
+let fridgeFrom = null;             // 'apartment' when the kitchen sent you to the fridge
+const roomPeaceSeen = new Map();   // detects the moment a room reaches peace → shimmer
+
+/* Provision (and heal) the wiring: one ☮ dream, six room steps.
+   Always find-before-create so re-opening never duplicates anything. */
+function ensureApartment() {
+  if (!state.apartment || !Array.isArray(state.apartment.rooms)) {
+    state.apartment = { dreamId: null, rooms: APARTMENT_ROOM_META.map(r => ({ key: r.key, stepId: null })) };
+  }
+  let changed = false;
+
+  let dream = state.dreams.find(d => d.id === state.apartment.dreamId && d.status === 'active');
+  if (!dream) {
+    dream = state.dreams.find(d =>
+      d.status === 'active' && d.scope === 'peace' &&
+      d.title.trim().toLowerCase() === HOME_DREAM_TITLE.toLowerCase());
+    if (!dream) {
+      dream = makeDream({
+        title: HOME_DREAM_TITLE,
+        why: 'A home where everything has a place, and my mind can rest.',
+        scope: 'peace', horizon: 'long', category: 'cat-home', status: 'active',
+      });
+      state.dreams.push(dream);
+    }
+    state.apartment.dreamId = dream.id;
+    changed = true;
+  }
+
+  for (const meta of APARTMENT_ROOM_META) {
+    let entry = state.apartment.rooms.find(r => r.key === meta.key);
+    if (!entry) { entry = { key: meta.key, stepId: null }; state.apartment.rooms.push(entry); changed = true; }
+    let m = dream.milestones.find(x => x.id === entry.stepId);
+    if (!m) {
+      m = dream.milestones.find(x => (x.text || '').trim().toLowerCase() === meta.step.toLowerCase());
+      if (!m) {
+        m = { id: uuid(), text: meta.step, done: false, doneAt: null, subtasks: [], links: [], dueDate: null };
+        dream.milestones.push(m);
+      }
+      entry.stepId = m.id;
+      changed = true;
+    }
+    if (!Array.isArray(m.subtasks)) m.subtasks = [];
+  }
+
+  if (changed) persist();
+  return dream;
+}
+
+function apartmentRooms(dream) {
+  return APARTMENT_ROOM_META.map(meta => {
+    const entry = state.apartment.rooms.find(x => x.key === meta.key);
+    const m = dream.milestones.find(x => x.id === entry?.stepId) || null;
+    const subs = m?.subtasks || [];
+    const total = subs.length;
+    const done = subs.filter(s => s.done).length;
+    const open = total - done;
+    const atPeace = !!m && m.done && open === 0;
+    return { ...meta, m, subs, total, done, open, atPeace };
+  });
+}
+
+function renderApartment() {
+  const dream = ensureApartment();
+  const rooms = apartmentRooms(dream);
+  let openTotal = 0, peaceCount = 0;
+
+  rooms.forEach(r => {
+    openTotal += r.open;
+    if (r.atPeace) peaceCount++;
+    const btn = document.querySelector(`#house-rooms .room[data-room="${r.key}"]`);
+    if (!btn) return;
+    btn.querySelector('.room-count').textContent =
+      r.open ? `· ${r.open} task${r.open === 1 ? '' : 's'}` : '';
+    btn.querySelector('.room-peace-badge').hidden = !r.atPeace;
+    btn.classList.toggle('at-peace', r.atPeace);
+    btn.querySelector('.room-boxes').hidden = r.open < 5;
+    btn.setAttribute('aria-label',
+      `${r.step}${r.atPeace ? ' — at peace' : r.open ? ` — ${r.open} task${r.open === 1 ? '' : 's'} to tidy` : ''}. Press Enter to open.`);
+    if (roomPeaceSeen.get(r.key) === false && r.atPeace && !REDUCED) {
+      btn.classList.add('shimmer');
+      setTimeout(() => btn.classList.remove('shimmer'), 1400);
+    }
+    roomPeaceSeen.set(r.key, r.atPeace);
+  });
+
+  $('#apartment-summary').textContent =
+    `${peaceCount} of ${rooms.length} rooms at peace · ${openTotal} task${openTotal === 1 ? '' : 's'} open`;
+  const pct = dreamProgress(dream);
+  $('#hp-fill').style.width = pct + '%';
+  $('#hp-label').textContent = `${HOME_DREAM_TITLE} ☮ — ${pct}%`;
+
+  renderRoomPanel();
+}
+
+/* checking a room task mirrors completeSubtask, with the room as orb origin */
+function completeRoomTask(dream, m, st, originEl) {
+  st.done = true;
+  st.doneAt = new Date().toISOString();
+  touch(dream);
+  state.jar.push({ date: new Date().toISOString(), dreamId: dream.id, kind: 'quick', scope: dream.scope });
+  bumpActivity(state);
+  persist();
+  miniCatch(originEl).then(renderAll);
+  setTimeout(renderAll, 450);
+}
+
+function catchRoomPeace(dream, m, roomEl) {
+  m.done = true;
+  m.doneAt = new Date().toISOString();
+  touch(dream);
+  state.jar.push({ date: new Date().toISOString(), dreamId: dream.id, kind: 'milestone', scope: dream.scope });
+  bumpActivity(state);
+  persist();
+  milestoneCatch(roomEl).then(renderAll);
+  setTimeout(renderAll, 500);
+  const allSix = state.apartment.rooms.every(r => dream.milestones.find(x => x.id === r.stepId)?.done);
+  if (allSix) {
+    confettiBurst(['#FBE18F', '#E3BE5C', '#FFFFFF', '#F77FBE']);
+    toast('Your home is at peace ☮ — catch this dream?', {
+      linkText: 'Catch it ✦', onLink: () => achieveDream(dream.id), duration: 9000,
+    });
+  }
+}
+
+function openRoomPanel(key) {
+  panelRoomKey = key;
+  sounds.tick();
+  renderRoomPanel();
+}
+
+function closeRoomPanel() {
+  if (!panelRoomKey) return;
+  panelRoomKey = null;
+  renderRoomPanel();
+}
+
+function renderRoomPanel() {
+  const panel = $('#room-panel');
+  const section = $('#apartment-view');
+  if (!panel) return;
+  if (!panelRoomKey || section.hidden) {
+    panel.classList.remove('open');
+    section.classList.remove('panel-open');
+    return;
+  }
+  const dream = ensureApartment();
+  const r = apartmentRooms(dream).find(x => x.key === panelRoomKey);
+  if (!r || !r.m) { panelRoomKey = null; panel.classList.remove('open'); return; }
+  const m = r.m;
+  const roomBtn = document.querySelector(`#house-rooms .room[data-room="${r.key}"]`);
+  const allDone = r.open === 0;
+
+  const addInput = h('input', {
+    type: 'text', placeholder: '＋ tidy task…', maxlength: '140',
+    'aria-label': `Add a tidy task for ${r.step}`,
+  });
+
+  panel.replaceChildren(
+    h('button', { class: 'rp-close', text: '✕', 'aria-label': 'Close room panel', onclick: closeRoomPanel }),
+    h('div', { class: 'rp-portrait', 'aria-hidden': 'true', html: ROOM_ART[r.key]() }),
+    h('div', { class: 'rp-head' },
+      h('h2', { text: r.step }),
+      r.atPeace ? h('span', { class: 'rp-peace', text: 'at peace ☮' }) : null,
+    ),
+    h('div', { class: 'rp-progress' },
+      h('span', { class: 'hp-track' },
+        h('span', { class: 'hp-fill', style: `width:${r.total ? Math.round((r.done / r.total) * 100) : (m.done ? 100 : 0)}%` })),
+      h('span', { class: 'rp-progress-label', text: r.total ? `${r.done} of ${r.total} tidy` : 'no tasks yet' }),
+    ),
+    r.subs.length ? h('ul', { class: 'rp-tasks' },
+      ...r.subs.map(st => h('li', { class: 'rp-task' + (st.done ? ' done' : '') },
+        h('button', {
+          class: 'tray-check',
+          style: st.done ? 'background:var(--pink);border-color:var(--pink)' : '',
+          'aria-label': (st.done ? 'Uncheck: ' : 'Tidy done: ') + st.text,
+          onclick: e => {
+            if (st.done) {
+              st.done = false; st.doneAt = null;
+              if (m.done) { m.done = false; m.doneAt = null; } // the room gently wakes
+              touch(dream); persist(); renderAll();
+            } else {
+              const rect = e.target.getBoundingClientRect();
+              starBurst(rect.x + rect.width / 2, rect.y);
+              completeRoomTask(dream, m, st, roomBtn);
+            }
+          },
+        }),
+        h('button', { class: 'rp-task-text', text: st.text, title: 'Edit this task', onclick: () => openTaskModal(dream.id, m.id, st.id) }),
+        st.scheduledFor ? h('span', { class: 'pill-time', text: st.scheduledFor.slice(5).replace('-', '/') }) : null,
+      ))) :
+      h('p', { class: 'rp-empty', text: 'Nothing to tidy here yet — add the little things below ✦' }),
+    h('form', {
+      class: 'rp-add',
+      onsubmit: e => {
+        e.preventDefault();
+        const text = addInput.value.trim();
+        if (!text) return;
+        m.subtasks.push({ id: uuid(), text, done: false, doneAt: null, scheduledFor: null, category: dream.category || null });
+        if (m.done) { m.done = false; m.doneAt = null; } // new mess: no penalty, just back to normal
+        touch(dream); persist(); sounds.tick(); renderAll();
+        $('#room-panel .rp-add input')?.focus();
+      },
+    }, addInput, h('button', { class: 'btn btn-secondary', type: 'submit', text: '＋' })),
+    h('div', { class: 'rp-actions' },
+      m.done
+        ? h('button', {
+            class: 'btn btn-secondary', text: '↩ not at peace after all',
+            onclick: () => { m.done = false; m.doneAt = null; touch(dream); persist(); renderAll(); },
+          })
+        : h('button', {
+            class: 'btn btn-peace', text: 'room at peace ☮',
+            disabled: allDone ? null : 'disabled',
+            title: allDone ? 'Catch this room for the dream' : 'finish the little tasks first ✦',
+            onclick: () => catchRoomPeace(dream, m, roomBtn),
+          }),
+      h('button', { class: 'btn btn-secondary', text: 'open in dream ✦', onclick: () => openStepModal(dream.id, m.id) }),
+      r.key === 'kitchen' ? h('button', {
+        class: 'btn btn-secondary', text: 'open the fridge →',
+        onclick: () => {
+          fridgeFrom = 'apartment';
+          $('#fridge-back').textContent = '← Back to the apartment';
+          showFridge();
+        },
+      }) : null,
+    ),
+  );
+  panel.classList.add('open');
+  section.classList.add('panel-open');
+}
+
+function showApartment() {
+  $('#main-view').hidden = true;
+  $('#gallery-view').hidden = true;
+  $('#fridge-view').hidden = true;
+  $('#fridge-dock').hidden = false;
+  $('#apartment-view').hidden = false;
+  $('#apartment-dock').hidden = true;
+  renderApartment();
+  window.scrollTo({ top: 0 });
+}
+
+function hideApartment() {
+  closeRoomPanel();
+  $('#apartment-view').hidden = true;
+  $('#apartment-dock').hidden = false;
+  $('#main-view').hidden = false;
+}
+
+function wireApartment() {
+  const roof = $('#house-roof');
+  if (!roof) return;
+  roof.innerHTML = houseRoof();
+  $('#house-base').innerHTML = houseBase();
+  $$('#house-rooms .room').forEach(btn => {
+    const key = btn.dataset.room;
+    const meta = APARTMENT_ROOM_META.find(x => x.key === key);
+    btn.querySelector('.room-scene').innerHTML = ROOM_ART[key]();
+    btn.setAttribute('aria-label', `${meta.step} — press Enter to open its tidy list`);
+    btn.append(
+      h('span', { class: 'room-label' },
+        h('span', { class: 'room-name', text: meta.label }),
+        h('span', { class: 'room-count' }),
+        h('span', { class: 'room-peace-badge', text: '☮', hidden: 'hidden' }),
+      ),
+      h('span', { class: 'room-boxes', 'aria-hidden': 'true', html: boxStack(), hidden: 'hidden' }),
+    );
+    btn.addEventListener('click', () => openRoomPanel(key));
+  });
+  $('#apartment-dock')?.addEventListener('click', showApartment);
+  $('#apartment-back')?.addEventListener('click', hideApartment);
+  $('#home-progress')?.addEventListener('click', () => openDreamModal(ensureApartment().id));
+  // clicking the sky around the house closes the panel
+  $('#apartment-view')?.addEventListener('click', e => {
+    if (e.target.closest('.room') || e.target.closest('#room-panel') ||
+        e.target.closest('.gallery-head') || e.target.closest('#home-progress')) return;
+    closeRoomPanel();
+  });
+}
+
 /* ---------- gallery ---------- */
 
 function showGallery() {
+  closeRoomPanel();
   $('#main-view').hidden = true;
   $('#fridge-view').hidden = true;
+  $('#fridge-dock').hidden = false;
+  $('#apartment-view').hidden = true;
+  $('#apartment-dock').hidden = false;
   $('#gallery-view').hidden = false;
   renderGallery();
   window.scrollTo({ top: 0 });
@@ -2402,7 +2728,20 @@ function renderGallery() {
     .filter(d => d.status === 'achieved' && d.horizon !== 'short')
     .sort((a, b) => new Date(b.achievedAt || 0) - new Date(a.achievedAt || 0));
 
-  $('#gallery-empty').hidden = achieved.length > 0;
+  const empty = $('#gallery-empty');
+  empty.hidden = achieved.length > 0;
+  if (!achieved.length) {
+    // the jar fills with every little catch — explain why it can glow while this shelf waits
+    const quick = state.jar.filter(e => e.kind === 'quick').length;
+    const ms = state.jar.filter(e => e.kind === 'milestone').length;
+    const bits = [
+      quick ? `${quick} little task${quick === 1 ? '' : 's'}` : null,
+      ms ? `${ms} dream step${ms === 1 ? '' : 's'}` : null,
+    ].filter(Boolean).join(' and ');
+    empty.querySelector('p').textContent = bits
+      ? `No whole dreams caught yet — but your jar is glowing with ${bits}. Achieve a dream and it lands here as a big orb. ✦`
+      : 'No dreams caught yet — but the sky is full of them. ✦';
+  }
   shelf.replaceChildren(
     ...achieved.map(d => {
       const c = dreamColor(state, d);
@@ -2515,6 +2854,7 @@ function openRolloverModal(items) {
       }),
     );
     handlers.set(dream.id, {
+      done: () => { remaining.delete(dream.id); row.remove(); completeQuickGoal(dream.id, null); finishIfEmpty(); },
       future: v => settle(() => { dream.scheduledFor = v; }),
       trash: () => settle(() => { dream.status = 'archived'; }),
     });
@@ -2700,6 +3040,7 @@ function init() {
   wireQuickAdd();
   wireHoverCast();
   wireFridge();
+  wireApartment();
   $('#tasks-log')?.addEventListener('click', openTasksModal);
   $('#peony-button')?.addEventListener('click', openTasksModal);
   initAudioOnGesture();

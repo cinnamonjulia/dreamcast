@@ -110,6 +110,13 @@ function seedCategories() {
   return CATEGORY_SET.map(([id, name, color]) => makeCategory(name, color, id));
 }
 
+/* The Apartment: six rooms, each backed by a step of one ☮ dream */
+export const APARTMENT_ROOM_KEYS = ['kitchen', 'mudroom', 'foyer', 'bedroom', 'office', 'living-room'];
+
+function defaultApartment() {
+  return { dreamId: null, rooms: APARTMENT_ROOM_KEYS.map(key => ({ key, stepId: null })) };
+}
+
 function seedDreams() {
   const iso = new Date().toISOString();
   return [
@@ -178,6 +185,7 @@ export function defaultState() {
     categories: seedCategories(),
     jar: [],
     fridge: { items: [], staples: [] },
+    apartment: defaultApartment(),
     settings: {
       muted: false,
       sort: 'momentum',
@@ -221,6 +229,14 @@ function migrate(raw) {
   }
   if (!raw.fridge || !Array.isArray(raw.fridge.items)) raw.fridge = { items: [] };
   if (!Array.isArray(raw.fridge.staples)) raw.fridge.staples = [];
+  // v1 in-place: the apartment (rooms heal if a save predates a room)
+  if (!raw.apartment || !Array.isArray(raw.apartment.rooms)) {
+    raw.apartment = defaultApartment();
+  } else {
+    if (raw.apartment.dreamId === undefined) raw.apartment.dreamId = null;
+    const have = new Set(raw.apartment.rooms.map(r => r && r.key));
+    APARTMENT_ROOM_KEYS.forEach(key => { if (!have.has(key)) raw.apartment.rooms.push({ key, stepId: null }); });
+  }
   // one-time upgrade to the pastel category set (renames in place, keeps ids)
   if (!raw.catsV2 && Array.isArray(raw.categories)) {
     const target = new Map(CATEGORY_SET.map(([id, name, color]) => [id, { name, color }]));

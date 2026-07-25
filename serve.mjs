@@ -30,4 +30,5 @@ createServer(async (req, res) => {
     res.end('not found');
   }
   // localhost only — never expose the folder to the LAN
-}).listen(8642, '127.0.0.1', () => console.log('Dreamcast on http://localhost:8642'));
+}).listen(Number(process.env.PORT) || 8642, '127.0.0.1',
+  function () { console.log(`Dreamcast on http://localhost:${this.address().port}`); });
