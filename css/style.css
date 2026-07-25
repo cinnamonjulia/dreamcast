@@ -580,8 +580,8 @@ body[data-sparkle="3"] .bg-cloud {
 #cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
-  gap: 84px 60px; /* dreams breathe — orbiting step clouds get real sky */
-  padding: 58px 250px 44px 20px; /* room for Julia, cloud bumps & orbiting steps */
+  gap: 64px 40px;
+  padding: 40px 250px 44px 20px; /* room for Julia & cloud bumps */
   align-items: start;
 }
 @media (max-width: 1360px) {
@@ -807,21 +807,30 @@ body[data-sparkle="3"] .bg-cloud {
   white-space: nowrap;
 }
 
-/* ---- dream steps: baby clouds orbiting the dream, catchable in place ---- */
-.step-cloud {
-  position: absolute;
+/* ---- dream steps: baby clouds nestled at the base of their dream ---- */
+.dream-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 9px 8px;
+  margin: 12px -8px -20px;
+  position: relative;
   z-index: 3;
+}
+.step-cloud {
+  position: relative;
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
   gap: 4px;
-  max-width: 224px;
-  min-width: 96px;
+  flex: 0 1 auto;
+  max-width: 210px;
+  min-width: 84px;
   border: none;
   background: rgba(255, 255, 255, .94);
-  border-radius: 20px;
-  padding: 9px 16px;
-  font-size: 12.5px;
+  border-radius: 18px;
+  padding: 8px 14px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink);
   box-shadow: 0 6px 16px rgba(142, 151, 232, .35);
@@ -869,14 +878,10 @@ body[data-sparkle="3"] .bg-cloud {
 }
 .step-progress-fill { display: block; height: 100%; border-radius: 999px; }
 
-.sc-0 { top: -26px; right: 8%; animation-delay: -1.2s; }
-.sc-1 { left: -12px; top: 42%; animation-delay: -2.8s; }
-.sc-2 { bottom: -18px; right: 22%; animation-delay: -.6s; }
-.sc-3 { bottom: -14px; left: 6%; animation-delay: -2s; }
-.sc-4 { top: -22px; left: 14%; animation-delay: -3.6s; }
-.sc-5 { right: -14px; top: 36%; animation-delay: -1.8s; }
-.sc-6 { bottom: -20px; left: 40%; animation-delay: -3s; }
-.step-more { font-weight: 800; color: var(--periwinkle); flex-direction: row; min-width: 0; }
+.step-cloud:nth-child(2n) { animation-delay: -1.6s; }
+.step-cloud:nth-child(3n) { animation-delay: -2.9s; }
+.step-cloud:nth-child(4n) { animation-delay: -.8s; }
+.step-more { font-weight: 800; color: var(--periwinkle); flex-direction: row; min-width: 0; align-self: center; }
 
 /* ============================ RECENT STRIP ============================ */
 

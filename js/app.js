@@ -799,7 +799,7 @@ function renderCard(d) {
   const stepTint = STEP_TINTS[d.scope] || STEP_TINTS.personal;
   if (steps.length) {
     card.append(h('div', { class: 'dream-steps', 'aria-hidden': 'false' },
-      ...steps.slice(0, 6).map((m, i) => {
+      ...steps.slice(0, 8).map((m, i) => {
         const stTotal = (m.subtasks || []).length;
         const stDone = (m.subtasks || []).filter(s => s.done).length;
         const pct = stTotal ? Math.round((stDone / stTotal) * 100) : 0;
@@ -818,10 +818,10 @@ function renderCard(d) {
             h('span', { class: 'step-progress-fill', style: `width:${pct}%;background:${scopeTint.mid}` })) : null,
         );
       }),
-      steps.length > 6 ? h('button', {
-        class: 'step-cloud sc-6 step-more',
-        title: `${steps.length - 6} more steps — open the dream`,
-        text: `+${steps.length - 6}`,
+      steps.length > 8 ? h('button', {
+        class: 'step-cloud step-more',
+        title: `${steps.length - 8} more steps — open the dream`,
+        text: `+${steps.length - 8}`,
         onclick: e => { e.stopPropagation(); openDreamModal(d.id); },
       }) : null,
     ));
