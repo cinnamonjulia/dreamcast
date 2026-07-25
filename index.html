@@ -6,7 +6,7 @@
 <title>Dreamcast ✦</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-sparkle="0">
@@ -45,6 +45,7 @@
         <button class="chip" data-scope="all">All</button>
         <button class="chip" data-scope="personal">✿ Personal</button>
         <button class="chip" data-scope="professional">✦ Professional</button>
+        <button class="chip" data-scope="haven">⌂ Haven</button>
       </div>
       <div class="chip-group" id="horizon-filter" role="group" aria-label="Horizon filter">
         <button class="chip" data-horizon="all">All</button>
@@ -62,6 +63,11 @@
 
   <div class="header-right">
     <a href="#" id="gallery-link" class="gallery-link">Caught dreams ✦ <span id="gallery-count">0</span></a>
+
+    <button id="peony-button" class="jar-button" aria-label="Weekly task peony — open the task log">
+      <svg id="peony-svg" viewBox="0 0 44 52" width="34" height="40" aria-hidden="true"></svg>
+      <span id="peony-count" class="jar-overflow" hidden></span>
+    </button>
 
     <button id="jar-button" class="jar-button" aria-label="Bubble jar — open caught dreams">
       <svg id="jar-svg" viewBox="0 0 48 60" width="38" height="46" aria-hidden="true">
@@ -146,6 +152,7 @@
 
   <!-- ======================= TODAY & THIS WEEK TRAY ======================= -->
   <section id="tray" aria-label="Short-term goals">
+    <button id="tasks-log" class="chip tasks-log-btn">Task log ✦</button>
     <div class="tray-group" data-cadence="today">
       <div class="tray-group-head"><h2>Today</h2><span class="caught-count" id="caught-today"></span></div>
       <ul class="tray-list" id="tray-today"></ul>
@@ -242,6 +249,65 @@
     <div id="recent-chips"></div>
   </section>
 </main>
+
+<!-- ======================= THE FRIDGE DOCK ======================= -->
+<button id="fridge-dock" aria-label="Open The Fridge">
+  <svg viewBox="0 0 30 40" width="24" height="32" aria-hidden="true">
+    <rect x="4" y="3" width="22" height="34" rx="4" fill="#EAF4FD" stroke="#2B2440" stroke-width="1.6"/>
+    <path d="M4 16 L26 16" stroke="#2B2440" stroke-width="1.4"/>
+    <path d="M22 7 L22 12 M22 20 L22 28" stroke="#8E97E8" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <span>The Fridge</span>
+</button>
+
+<!-- ======================= THE FRIDGE ======================= -->
+<section id="fridge-view" hidden>
+  <div class="gallery-head">
+    <button id="fridge-back" class="chip">← Back to the sky</button>
+    <h2>The Fridge ✦</h2>
+    <span id="fridge-summary" class="fridge-summary"></span>
+  </div>
+  <div class="kitchen">
+    <div class="appliance-wrap">
+      <div id="fridge-unit" class="fridge">
+        <div class="fridge-interior">
+          <div class="fridge-shelf" data-shelf="0"></div>
+          <div class="fridge-shelf" data-shelf="1"></div>
+          <div class="fridge-shelf" data-shelf="2"></div>
+        </div>
+        <div class="fridge-door" id="fridge-door">
+          <div class="door-handle"></div>
+          <div class="door-magnet m1">✦</div>
+          <div class="door-magnet m2">✿</div>
+          <div class="door-note">dream big,<br>eat well ♡</div>
+        </div>
+      </div>
+      <span class="appliance-label">the fridge — click to open</span>
+    </div>
+    <div class="appliance-wrap">
+      <div id="pantry-unit" class="pantry">
+        <div class="pantry-shelf" data-shelf="0"></div>
+        <div class="pantry-shelf" data-shelf="1"></div>
+        <div class="pantry-shelf" data-shelf="2"></div>
+      </div>
+      <span class="appliance-label">the pantry</span>
+    </div>
+    <div class="appliance-wrap trash-wrap">
+      <div id="trash-can" title="Drop food here, or click to clear expired">
+        <svg viewBox="0 0 40 48" width="64" height="76" aria-hidden="true">
+          <path d="M8 14 L32 14 L29 42 Q29 45 26 45 L14 45 Q11 45 11 42 Z" fill="#C9CFE8" stroke="#2B2440" stroke-width="1.8"/>
+          <rect x="6" y="9" width="28" height="5" rx="2.5" fill="#AEB6DE" stroke="#2B2440" stroke-width="1.8"/>
+          <path d="M16 9 Q16 5 20 5 Q24 5 24 9" fill="none" stroke="#2B2440" stroke-width="1.8"/>
+          <path d="M16 19 L17 39 M24 19 L23 39" stroke="#8E97E8" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="appliance-label">drag here · click clears expired</span>
+    </div>
+  </div>
+  <div class="fridge-julia">
+    <img src="assets/julia-cartoon.png" alt="Julia">
+  </div>
+</section>
 
 <!-- ======================= CAUGHT DREAMS GALLERY ======================= -->
 <section id="gallery-view" hidden>

@@ -14,6 +14,8 @@ import {
   syncEnabled, currentUser, sendCode, verifyCode, signOut, pullRemote, pushRemote, onAuth,
 } from './sync.js';
 
+import { matchFood, dishFood, foodIconSvg } from './foods.js';
+
 import {
   REDUCED, setMuteSource, initAudioOnGesture, sounds,
   startIdleLife, startAmbientSky, perkUp, happyBounce,
@@ -55,6 +57,12 @@ function mergeDisk(onDisk) {
     }
   }
   if (Array.isArray(onDisk.jar) && onDisk.jar.length > state.jar.length) state.jar = onDisk.jar;
+  if (onDisk.fridge && Array.isArray(onDisk.fridge.items)) {
+    const have = new Set(state.fridge.items.map(i => i.id));
+    onDisk.fridge.items.forEach(i => {
+      if (!have.has(i.id) && new Date(i.addedAt).getTime() > lastSync - 2000) state.fridge.items.push(i);
+    });
+  }
   if (Array.isArray(onDisk.weeklyActivity)) {
     for (const wa of onDisk.weeklyActivity) {
       const mine = state.weeklyActivity.find(w => w.weekKey === wa.weekKey);
@@ -151,8 +159,10 @@ function renderAll() {
   renderSky();
   renderRecent();
   renderJar();
+  renderPeony();
   renderMute();
   updateSparkle();
+  if (!$('#fridge-view').hidden) renderFridge();
   $('#gallery-count').textContent =
     state.dreams.filter(d => d.status === 'achieved' && d.horizon !== 'short').length;
   if (!$('#gallery-view').hidden) renderGallery();
@@ -217,7 +227,7 @@ function renderHorizon() {
         style: `animation-duration:${(6 + (i % 5) * 1.7).toFixed(1)}s`,
         'aria-label': `Someday dream: ${d.title}`,
         onclick: () => openSomedayModal(d.id),
-        text: `${d.title} ${d.scope === 'personal' ? '✿' : '✦'}`,
+        text: `${d.title} ${scopeGlyph(d.scope)}`,
       });
       return b;
     }),
@@ -263,6 +273,67 @@ function caughtCount(cadence, sinceFn) {
     d.status === 'achieved' && d.achievedAt && sinceFn(d.achievedAt)).length;
 }
 
+/* milestone subtasks scheduled into the tray */
+function scheduledSubtasks(cadence) {
+  const today = todayISO();
+  const wk = weekKey();
+  const out = [];
+  for (const d of state.dreams) {
+    if (d.status !== 'active') continue;
+    if (!matchesScopeCat(d)) continue;
+    for (const m of d.milestones) {
+      for (const st of (m.subtasks || [])) {
+        if (st.done || !st.scheduledFor) continue;
+        const inToday = st.scheduledFor <= today;
+        const inWeek = !inToday && weekKey(new Date(st.scheduledFor + 'T12:00')) === wk;
+        if ((cadence === 'today' && inToday) || (cadence === 'this-week' && inWeek)) {
+          out.push({ dream: d, ms: m, st, overdue: st.scheduledFor < today });
+        }
+      }
+    }
+  }
+  return out.sort((a, b) => (a.st.scheduledFor < b.st.scheduledFor ? -1 : 1));
+}
+
+function renderSubtaskPill({ dream, ms, st, overdue }) {
+  const pill = h('li', {
+    class: `tray-pill pill-subtask pill-${dream.scope}` + (overdue ? ' overdue' : ''),
+    'data-id': st.id,
+  },
+    h('button', {
+      class: 'tray-check',
+      'aria-label': `Complete: ${st.text}`,
+      onclick: e => { e.stopPropagation(); completeSubtask(dream.id, ms.id, st.id, pill); },
+    }),
+    h('button', {
+      class: 'pill-title', style: 'background:none;border:none;padding:0;font:inherit;font-weight:700;cursor:pointer;',
+      text: st.text,
+      title: `Step of "${ms.text}" in "${dream.title}"`,
+      onclick: () => openDreamModal(dream.id),
+    }),
+    h('span', { class: 'pill-time', text: st.scheduledFor.slice(5).replace('-', '/') }),
+    h('span', { class: 'pill-parent', text: dream.title.slice(0, 14) + (dream.title.length > 14 ? '…' : '') }),
+    h('span', { class: 'scope-glyph', text: scopeGlyph(dream.scope) }),
+  );
+  return pill;
+}
+
+function completeSubtask(dreamId, msId, stId, pillEl) {
+  const d = findDream(dreamId);
+  const m = d?.milestones.find(x => x.id === msId);
+  const st = m?.subtasks.find(x => x.id === stId);
+  if (!st) return;
+  st.done = true;
+  st.doneAt = new Date().toISOString();
+  touch(d);
+  state.jar.push({ date: new Date().toISOString(), dreamId: d.id, kind: 'quick' });
+  bumpActivity(state);
+  persist();
+  pillEl?.classList.add('completing');
+  miniCatch(pillEl).then(() => renderAll());
+  setTimeout(renderAll, 450);
+}
+
 function renderTray() {
   const today = todayISO();
   const wk = weekKey();
@@ -272,10 +343,12 @@ function renderTray() {
     ['this-week', '#tray-week', '#caught-week'],
   ]) {
     const goals = shortGoals(cadence);
+    const subs = scheduledSubtasks(cadence);
     const list = $(listId);
     setChildren(list,
       ...goals.map(d => renderTrayPill(d)),
-      goals.length ? null :
+      ...subs.map(s => renderSubtaskPill(s)),
+      (goals.length + subs.length) ? null :
         h('li', { class: 'tray-empty-hint', text: cadence === 'today' ? 'Nothing yet — what would make today feel good?' : 'A clear week of sky.' }),
     );
     const n = cadence === 'today'
@@ -291,7 +364,7 @@ function renderTrayPill(d) {
     : d.importance === 'low' ? 'least important' : 'normal importance';
   const pill = h('li', {
     class: 'tray-pill'
-      + (d.scope === 'personal' ? ' pill-personal' : ' pill-professional')
+      + ` pill-${d.scope}`
       + (d.importance === 'high' ? ' imp-high' : d.importance === 'low' ? ' imp-low' : '')
       + (isOverdue(d) ? ' overdue' : ''),
     'data-id': d.id,
@@ -316,7 +389,11 @@ function renderTrayPill(d) {
     }),
     d.dueTime ? h('span', { class: 'pill-time', text: formatTime(d.dueTime) }) : null,
     d.linkedDreamId ? h('span', { class: 'pill-link-glyph', title: 'Feeds a bigger dream', text: '☁️' }) : null,
-    h('span', { class: 'scope-glyph', text: d.scope === 'personal' ? '✿' : '✦' }),
+    d.groceries?.length ? h('button', {
+      class: 'pill-note-btn', title: 'View grocery list', text: '▤',
+      onclick: e => { e.stopPropagation(); openGroceryNote(d.id); },
+    }) : null,
+    h('span', { class: 'scope-glyph', text: scopeGlyph(d.scope) }),
   );
   return pill;
 }
@@ -336,6 +413,12 @@ function completeQuickGoal(id, pillEl) {
       big.updates.unshift({ date: todayISO(), text: `Caught a quick goal: ${d.title}` });
       touch(big);
     }
+  }
+  // kitchen magic: groceries stock the fridge, recipes become dishes
+  if (d.groceries?.length) stockFridge(d.groceries);
+  if (d.recipeLink || /\b(cook|meal prep|bake|dinner|lunch|breakfast)\b/i.test(d.title)) {
+    addFoodItem(d.title.replace(/^(cook|make|bake|meal prep:?|prep)\s*/i, '') || 'Home-cooked meal', dishFood());
+    toast('Something delicious landed in the fridge ✦');
   }
   persist();
 
@@ -417,14 +500,24 @@ function linkHost(url) {
 }
 
 /* personal dreams are pink; the shorter the horizon, the deeper the shade */
-const PERSONAL_PINK = {
-  mid: 'rgba(240, 150, 209, .9)',   // deeper cool rose — nearer term
-  long: 'rgba(248, 213, 237, .88)', // pale cool pink — far away
+const SCOPE_TINTS = {
+  personal: {                          // cool rose
+    mid: 'rgba(240, 150, 209, .9)',
+    long: 'rgba(248, 213, 237, .88)',
+  },
+  professional: {                      // blue
+    mid: 'rgba(126, 168, 230, .9)',
+    long: 'rgba(206, 224, 246, .88)',
+  },
+  haven: {                             // warm gold — home, order, self-care
+    mid: 'rgba(244, 187, 100, .9)',
+    long: 'rgba(252, 231, 186, .88)',
+  },
 };
-const PROFESSIONAL_BLUE = {
-  mid: 'rgba(126, 168, 230, .9)',   // deeper blue — nearer term
-  long: 'rgba(206, 224, 246, .88)', // pale blue — far away
-};
+
+const SCOPE_GLYPHS = { personal: '✿', professional: '✦', haven: '⌂' };
+const scopeGlyph = s => SCOPE_GLYPHS[s] || '✿';
+const SCOPE_OPTIONS = [['personal', '✿ Personal'], ['professional', '✦ Professional'], ['haven', '⌂ Haven']];
 const NEGLECT_DAYS = 5;
 
 function renderCard(d) {
@@ -460,7 +553,7 @@ function renderCard(d) {
     h('div', { class: 'card-top' },
       h('span', { class: 'cat-ribbon', style: `background:${cat?.color || color}`, title: cat?.name || '' }),
       h('h3', { class: 'card-title', text: d.title }),
-      h('span', { class: 'scope-glyph', title: d.scope, text: d.scope === 'personal' ? '✿' : '✦' }),
+      h('span', { class: 'scope-glyph', title: d.scope, text: scopeGlyph(d.scope) }),
       h('span', { class: 'horizon-tag' + (d.horizon === 'long' ? ' tag-long' : ''), text: d.horizon === 'mid' ? 'Mid' : 'Long' }),
     ),
     d.why ? h('p', { class: 'card-why', text: d.why }) : null,
@@ -491,10 +584,8 @@ function renderCard(d) {
     ),
   );
 
-  card.style.setProperty('--tint',
-    d.scope === 'personal'
-      ? (PERSONAL_PINK[d.horizon] || PERSONAL_PINK.mid)
-      : (PROFESSIONAL_BLUE[d.horizon] || PROFESSIONAL_BLUE.mid));
+  const scopeTint = SCOPE_TINTS[d.scope] || SCOPE_TINTS.personal;
+  card.style.setProperty('--tint', scopeTint[d.horizon] || scopeTint.mid);
 
   // stable float randomization per dream
   if (!floatCache.has(d.id)) {
@@ -659,21 +750,61 @@ function openDreamModal(id) {
 
   const msSection = h('div');
   const renderMs = () => {
+    const subtaskBlock = m => {
+      const stText = h('input', { type: 'text', placeholder: '＋ subtask…', maxlength: '140', style: 'flex:2;min-width:0' });
+      const stDate = h('input', { type: 'date', 'aria-label': 'Schedule subtask', style: 'flex:1;min-width:0' });
+      return h('div', { class: 'subtask-block' },
+        (m.subtasks || []).length ? h('ul', { class: 'subtask-list' },
+          ...m.subtasks.map((st, si) =>
+            h('li', { class: 'ms-item subtask-item' + (st.done ? ' done' : '') },
+              h('button', {
+                class: 'ms-check st-check',
+                'aria-label': (st.done ? 'Uncheck: ' : 'Complete: ') + st.text,
+                text: st.done ? '✓' : '',
+                onclick: () => {
+                  if (st.done) { st.done = false; st.doneAt = null; touch(d); persist(); renderMs(); renderAll(); }
+                  else { completeSubtask(d.id, m.id, st.id, null); renderMs(); }
+                },
+              }),
+              h('span', { class: 'ms-text', text: st.text }),
+              st.scheduledFor ? h('span', { class: 'pill-time', text: st.scheduledFor.slice(5).replace('-', '/') }) : null,
+              h('div', { class: 'ms-tools' },
+                h('button', { text: '✕', 'aria-label': 'Delete subtask', onclick: () => { m.subtasks.splice(si, 1); touch(d); persist(); renderMs(); renderAll(); } }),
+              ),
+            )),
+        ) : null,
+        h('form', {
+          class: 'ms-add subtask-add',
+          onsubmit: e => {
+            e.preventDefault();
+            const text = stText.value.trim();
+            if (!text) return;
+            m.subtasks.push({ id: uuid(), text, done: false, doneAt: null, scheduledFor: stDate.value || null });
+            touch(d); persist(); renderMs(); renderAll();
+          },
+        }, stText, stDate, h('button', { class: 'btn btn-secondary', type: 'submit', text: '＋' })),
+      );
+    };
+
     const list = h('ul', { class: 'ms-list' },
       ...d.milestones.map((m, i) =>
-        h('li', { class: 'ms-item' + (m.done ? ' done' : '') },
-          h('button', {
-            class: 'ms-check',
-            'aria-label': (m.done ? 'Uncheck: ' : 'Check off: ') + m.text,
-            text: m.done ? '✓' : '',
-            onclick: () => toggleMilestone(d, m),
-          }),
-          h('span', { class: 'ms-text', text: m.text }),
-          h('div', { class: 'ms-tools' },
-            h('button', { text: '↑', 'aria-label': 'Move up', onclick: () => { if (i > 0) { d.milestones.splice(i - 1, 0, d.milestones.splice(i, 1)[0]); touch(d); persist(); renderMs(); renderAll(); } } }),
-            h('button', { text: '↓', 'aria-label': 'Move down', onclick: () => { if (i < d.milestones.length - 1) { d.milestones.splice(i + 1, 0, d.milestones.splice(i, 1)[0]); touch(d); persist(); renderMs(); renderAll(); } } }),
-            h('button', { text: '✕', 'aria-label': 'Delete milestone', onclick: () => { d.milestones.splice(i, 1); touch(d); persist(); renderMs(); renderAll(); } }),
+        h('li', { class: 'ms-item-wrap' },
+          h('div', { class: 'ms-item' + (m.done ? ' done' : '') },
+            h('button', {
+              class: 'ms-check',
+              'aria-label': (m.done ? 'Uncheck: ' : 'Check off: ') + m.text,
+              text: m.done ? '✓' : '',
+              onclick: () => toggleMilestone(d, m),
+            }),
+            h('span', { class: 'ms-text', text: m.text }),
+            (m.subtasks || []).length ? h('span', { class: 'st-count', text: `${m.subtasks.filter(s => s.done).length}/${m.subtasks.length}` }) : null,
+            h('div', { class: 'ms-tools' },
+              h('button', { text: '↑', 'aria-label': 'Move up', onclick: () => { if (i > 0) { d.milestones.splice(i - 1, 0, d.milestones.splice(i, 1)[0]); touch(d); persist(); renderMs(); renderAll(); } } }),
+              h('button', { text: '↓', 'aria-label': 'Move down', onclick: () => { if (i < d.milestones.length - 1) { d.milestones.splice(i + 1, 0, d.milestones.splice(i, 1)[0]); touch(d); persist(); renderMs(); renderAll(); } } }),
+              h('button', { text: '✕', 'aria-label': 'Delete milestone', onclick: () => { d.milestones.splice(i, 1); touch(d); persist(); renderMs(); renderAll(); } }),
+            ),
           ),
+          subtaskBlock(m),
         )
       ),
     );
@@ -801,7 +932,7 @@ function openDreamModal(id) {
       ),
       h('div', { class: 'field' },
         h('label', { text: 'Scope' }),
-        radioPills('m-scope', [['personal', '✿ Personal'], ['professional', '✦ Professional']], d.scope, v => { d.scope = v; touch(d); persist(); renderAll(); }),
+        radioPills('m-scope', SCOPE_OPTIONS, d.scope, v => { d.scope = v; touch(d); persist(); renderAll(); }),
       ),
     ),
     h('div', { class: 'field-row' },
@@ -922,7 +1053,7 @@ function openSomedayModal(id) {
     h('h2', { text: d.title }),
     d.why ? h('p', { style: 'font-style:italic;opacity:.8', text: d.why }) : null,
     h('p', { style: 'font-size:13px;font-weight:700;color:var(--periwinkle)' },
-      document.createTextNode(`${d.scope === 'personal' ? '✿ Personal' : '✦ Professional'}${cat ? ' · ' + cat.name : ''}`)),
+      document.createTextNode(`${scopeGlyph(d.scope)} ${d.scope[0].toUpperCase() + d.scope.slice(1)}${cat ? ' · ' + cat.name : ''}`)),
     chaseArea,
     h('div', { class: 'modal-actions' },
       h('button', {
@@ -992,7 +1123,7 @@ function openQuickGoalModal(id) {
     h('div', { class: 'field-row' },
       h('div', { class: 'field' },
         h('label', { text: 'Scope' }),
-        radioPills('qg-scope', [['personal', '✿ Personal'], ['professional', '✦ Professional']], d.scope, v => { d.scope = v; touch(d); persist(); renderAll(); }),
+        radioPills('qg-scope', SCOPE_OPTIONS, d.scope, v => { d.scope = v; touch(d); persist(); renderAll(); }),
       ),
       h('div', { class: 'field' },
         h('label', { text: 'Category' }),
@@ -1007,6 +1138,29 @@ function openQuickGoalModal(id) {
         h('option', { value: '', text: '— none —' }),
         ...bigDreams.map(b => h('option', { value: b.id, text: b.title, selected: b.id === d.linkedDreamId ? 'selected' : null })),
       ),
+    ),
+    h('div', { class: 'field' },
+      h('label', { text: 'Grocery list (one per line — completing this goal stocks the fridge)' }),
+      h('textarea', {
+        placeholder: 'milk\neggs\nstrawberries\n…paste a whole list here',
+        oninput: e => {
+          d.groceries = e.target.value.split('\n').map(x => x.trim()).filter(Boolean);
+          touch(d); persist(); renderAll();
+        },
+        text: (d.groceries || []).join('\n'),
+      }),
+      d.groceries?.length ? h('button', {
+        class: 'btn btn-secondary', style: 'margin-top:6px',
+        text: `View list as a note ✎ (${d.groceries.length})`,
+        onclick: () => openGroceryNote(d.id),
+      }) : null,
+    ),
+    h('div', { class: 'field' },
+      h('label', { text: 'Recipe link (optional — completing adds the dish to the fridge)' }),
+      h('input', {
+        type: 'text', placeholder: 'https://…', value: d.recipeLink || '',
+        onchange: e => { d.recipeLink = e.target.value.trim() || null; touch(d); persist(); renderAll(); },
+      }),
     ),
     h('div', { class: 'modal-actions' },
       h('button', {
@@ -1051,7 +1205,7 @@ function openNewDreamModal() {
         h('div', { class: 'field-row' },
           h('div', { class: 'field' },
             h('label', { text: 'Scope' }),
-            radioPills('nd-scope', [['personal', '✿ Personal'], ['professional', '✦ Professional']], draft.scope, v => draft.scope = v),
+            radioPills('nd-scope', SCOPE_OPTIONS, draft.scope, v => draft.scope = v),
           ),
           h('div', { class: 'field' },
             h('label', { text: 'Category' }),
@@ -1074,7 +1228,7 @@ function openNewDreamModal() {
         ),
         h('div', { class: 'field' },
           h('label', { text: 'Scope' }),
-          radioPills('nd-scope', [['personal', '✿ Personal'], ['professional', '✦ Professional']], draft.scope, v => draft.scope = v),
+          radioPills('nd-scope', SCOPE_OPTIONS, draft.scope, v => draft.scope = v),
         ),
       );
     } else {
@@ -1086,7 +1240,7 @@ function openNewDreamModal() {
         h('div', { class: 'field-row' },
           h('div', { class: 'field' },
             h('label', { text: 'Scope' }),
-            radioPills('nd-scope', [['personal', '✿ Personal'], ['professional', '✦ Professional']], draft.scope, v => draft.scope = v),
+            radioPills('nd-scope', SCOPE_OPTIONS, draft.scope, v => draft.scope = v),
           ),
           h('div', { class: 'field' },
             h('label', { text: 'Category' }),
@@ -1333,10 +1487,214 @@ async function openSyncModal() {
   ), { slim: true });
 }
 
+/* ---------- the peony: petals bloom for each task done this week ---------- */
+
+function tasksThisWeek() {
+  const wk = weekKey();
+  return state.jar.filter(e => e.kind === 'quick' && weekKey(new Date(e.date)) === wk).length;
+}
+
+function renderPeony() {
+  const svg = $('#peony-svg');
+  if (!svg) return;
+  const count = tasksThisWeek();
+  const petals = Math.min(count, 13);
+  let parts = `
+    <path d="M22 30 L22 48" stroke="#8FBF84" stroke-width="2.2" stroke-linecap="round"/>
+    <ellipse cx="16" cy="42" rx="5" ry="2.4" fill="#A5D9A2" transform="rotate(-28 16 42)"/>
+    <ellipse cx="28" cy="45" rx="5" ry="2.4" fill="#A5D9A2" transform="rotate(28 28 45)"/>`;
+  // outer ring of 8, then inner ring of 5 — bloom outer-first
+  for (let i = 0; i < Math.min(petals, 8); i++) {
+    const a = i * 45 + 22;
+    parts += `<g transform="rotate(${a} 22 19)"><ellipse cx="22" cy="8.5" rx="5.4" ry="9" fill="#F7B8D9" stroke="#E48BBD" stroke-width="1"/></g>`;
+  }
+  for (let i = 0; i < Math.max(0, petals - 8); i++) {
+    const a = i * 72;
+    parts += `<g transform="rotate(${a} 22 19)"><ellipse cx="22" cy="12" rx="4.2" ry="6.5" fill="#F49BC9" stroke="#E48BBD" stroke-width="1"/></g>`;
+  }
+  parts += `<circle cx="22" cy="19" r="${petals ? 4.5 : 3.5}" fill="#FBE7A2" stroke="#E8CF7E" stroke-width="1.2"/>`;
+  svg.innerHTML = parts;
+  const badge = $('#peony-count');
+  badge.hidden = count === 0;
+  badge.textContent = count;
+  $('#peony-button').title = count
+    ? `${count} task${count === 1 ? '' : 's'} bloomed this week ✿ — click for the task log`
+    : 'Finish tasks to bloom the peony — click for the task log';
+}
+
+/* ---------- task log: scheduled ahead & caught in the past ---------- */
+
+function openTasksModal() {
+  const today = todayISO();
+  const upcoming = [];
+  const past = [];
+  for (const d of state.dreams) {
+    if (d.horizon === 'short' && d.status === 'achieved' && d.achievedAt) {
+      past.push({ date: d.achievedAt, text: d.title, kind: 'goal' });
+    }
+    for (const m of d.milestones) {
+      for (const st of (m.subtasks || [])) {
+        if (st.done && st.doneAt) past.push({ date: st.doneAt, text: st.text, kind: 'subtask', dream: d.title });
+        else if (!st.done && st.scheduledFor && st.scheduledFor > today && d.status === 'active') {
+          upcoming.push({ date: st.scheduledFor, text: st.text, dream: d.title, id: d.id });
+        }
+      }
+    }
+  }
+  upcoming.sort((a, b) => (a.date < b.date ? -1 : 1));
+  past.sort((a, b) => (a.date > b.date ? -1 : 1));
+
+  openModal(h('div', {},
+    h('h2', { text: 'Task log ✦' }),
+    h('h3', { text: 'Scheduled ahead' }),
+    upcoming.length ? h('ul', { class: 'updates-list' },
+      ...upcoming.slice(0, 40).map(u => h('li', {},
+        h('span', { class: 'u-date', text: u.date }),
+        h('a', { href: '#', text: u.text, onclick: e => { e.preventDefault(); closeModal(); openDreamModal(u.id); } }),
+        h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }),
+      )))
+      : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'Nothing scheduled yet — add dated subtasks inside a dream’s milestones.' }),
+    h('h3', { text: 'Caught in the past' }),
+    past.length ? h('ul', { class: 'updates-list' },
+      ...past.slice(0, 60).map(u => h('li', {},
+        h('span', { class: 'u-date', text: u.date.slice(0, 10) }),
+        document.createTextNode(u.text),
+        u.dream ? h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }) : null,
+      )))
+      : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'No tasks caught yet — today is a fine day to start.' }),
+  ));
+}
+
+/* ---------- handwritten grocery note ---------- */
+
+function openGroceryNote(id) {
+  const d = findDream(id);
+  if (!d) return;
+  openModal(h('div', { class: 'paper-note' },
+    h('div', { class: 'note-tape' }),
+    h('h2', { class: 'note-title', text: d.title }),
+    h('ul', { class: 'note-list' },
+      ...(d.groceries || []).map(g => h('li', {},
+        h('span', { class: 'note-box' }),
+        document.createTextNode(g),
+      ))),
+    h('p', { class: 'note-footer', text: '— caught with love ♡' }),
+  ), { slim: true });
+}
+
+/* ---------- the fridge ---------- */
+
+function addFoodItem(name, info) {
+  const now = Date.now();
+  state.fridge.items.push({
+    id: uuid(),
+    name: name.trim(),
+    icon: info.icon,
+    area: info.area,
+    addedAt: new Date(now).toISOString(),
+    expiresAt: info.days ? new Date(now + info.days * 86400000).toISOString() : null,
+  });
+}
+
+function stockFridge(names) {
+  names.forEach(n => addFoodItem(n, matchFood(n)));
+  toast(`Fridge stocked ✦ ${names.length} item${names.length === 1 ? '' : 's'} put away`);
+  if (!$('#fridge-view').hidden) renderFridge();
+}
+
+function expiryLabel(item) {
+  if (!item.expiresAt) return 'keeps well';
+  const days = Math.ceil((new Date(item.expiresAt).getTime() - Date.now()) / 86400000);
+  if (days < 0) return 'expired!';
+  if (days === 0) return 'use today';
+  return `~${days}d left`;
+}
+
+function isExpired(item) {
+  return item.expiresAt && new Date(item.expiresAt).getTime() < Date.now();
+}
+
+function renderFridge() {
+  const items = state.fridge.items;
+  const areas = { fridge: '.fridge-shelf', pantry: '.pantry-shelf' };
+  for (const [area, sel] of Object.entries(areas)) {
+    const shelves = $$(sel);
+    shelves.forEach(s => s.replaceChildren());
+    items.filter(i => i.area === area).forEach((item, idx) => {
+      const el = h('span', {
+        class: 'food-item' + (isExpired(item) ? ' expired' : ''),
+        draggable: 'true',
+        'data-id': item.id,
+        'data-label': `${item.name} · ${expiryLabel(item)}`,
+        html: foodIconSvg(item.icon),
+        ondragstart: e => e.dataTransfer.setData('text/plain', item.id),
+      });
+      shelves[idx % shelves.length].appendChild(el);
+    });
+  }
+  const total = items.length;
+  const expired = items.filter(isExpired).length;
+  $('#fridge-summary').textContent = total
+    ? `${total} item${total === 1 ? '' : 's'}${expired ? ` · ${expired} expired` : ''}`
+    : 'empty — finish a grocery-shopping task to stock it';
+}
+
+function removeFoodItem(id) {
+  state.fridge.items = state.fridge.items.filter(i => i.id !== id);
+  persist();
+  sounds.tick();
+  renderFridge();
+}
+
+function clearExpired() {
+  const expired = state.fridge.items.filter(isExpired);
+  if (!expired.length) { toast('Nothing expired — the fridge is fresh ✦'); return; }
+  state.fridge.items = state.fridge.items.filter(i => !isExpired(i));
+  persist();
+  renderFridge();
+  toast(`Tossed ${expired.length} expired item${expired.length === 1 ? '' : 's'} 🗑`);
+}
+
+function showFridge() {
+  $('#main-view').hidden = true;
+  $('#gallery-view').hidden = true;
+  $('#fridge-view').hidden = false;
+  $('#fridge-dock').hidden = true;
+  renderFridge();
+  window.scrollTo({ top: 0 });
+}
+
+function hideFridge() {
+  $('#fridge-view').hidden = true;
+  $('#main-view').hidden = false;
+  $('#fridge-dock').hidden = false;
+}
+
+function wireFridge() {
+  $('#fridge-dock').addEventListener('click', showFridge);
+  $('#fridge-back').addEventListener('click', hideFridge);
+  $('#fridge-unit').addEventListener('click', e => {
+    if (e.target.closest('.food-item')) return;
+    $('#fridge-unit').classList.toggle('open');
+    sounds.tick();
+  });
+  const trash = $('#trash-can');
+  trash.addEventListener('click', clearExpired);
+  trash.addEventListener('dragover', e => { e.preventDefault(); trash.classList.add('drag-over'); });
+  trash.addEventListener('dragleave', () => trash.classList.remove('drag-over'));
+  trash.addEventListener('drop', e => {
+    e.preventDefault();
+    trash.classList.remove('drag-over');
+    const id = e.dataTransfer.getData('text/plain');
+    if (id) removeFoodItem(id);
+  });
+}
+
 /* ---------- gallery ---------- */
 
 function showGallery() {
   $('#main-view').hidden = true;
+  $('#fridge-view').hidden = true;
   $('#gallery-view').hidden = false;
   renderGallery();
   window.scrollTo({ top: 0 });
@@ -1378,7 +1736,7 @@ function openStoryModal(id) {
     h('h2', { text: d.title }),
     h('p', { style: 'font-size:13px;font-weight:700;color:var(--periwinkle)' },
       document.createTextNode(
-        `${d.scope === 'personal' ? '✿ Personal' : '✦ Professional'}${cat ? ' · ' + cat.name : ''}` +
+        `${scopeGlyph(d.scope)} ${d.scope[0].toUpperCase() + d.scope.slice(1)}${cat ? ' · ' + cat.name : ''}` +
         `${d.achievedAt ? ' · caught ' + d.achievedAt.slice(0, 10) : ''}`)),
     d.why ? h('p', { style: 'font-style:italic', text: d.why }) : null,
     d.milestones.length ? h('div', {},
@@ -1605,6 +1963,9 @@ function init() {
   wireHeader();
   wireQuickAdd();
   wireHoverCast();
+  wireFridge();
+  $('#tasks-log').addEventListener('click', openTasksModal);
+  $('#peony-button').addEventListener('click', openTasksModal);
   initAudioOnGesture();
   renderAll();
   startIdleLife();

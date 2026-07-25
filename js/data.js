@@ -66,10 +66,12 @@ export function makeDream(partial = {}) {
     scope: 'personal',
     category: null,
     color: null,              // null → category default
-    milestones: [],
+    milestones: [],           // [{ id, text, done, doneAt, subtasks: [{ id, text, done, doneAt, scheduledFor }] }]
     links: [],                // [{ id, title, url }] — resources nested in the card
     importance: null,         // 'high' | null | 'low' — short-goal priority star
     dueTime: null,            // 'HH:MM' — optional time-bound deadline for short goals
+    groceries: [],            // grocery list — completing the goal stocks the fridge
+    recipeLink: null,         // recipe URL — completing the goal adds a dish to the fridge
     manualPercent: null,      // used only when no milestones
     targetDate: null,
     pinned: false,
@@ -172,6 +174,7 @@ export function defaultState() {
     dreams: seedDreams(),
     categories: seedCategories(),
     jar: [],
+    fridge: { items: [] },
     settings: {
       muted: false,
       sort: 'momentum',
@@ -199,8 +202,12 @@ function migrate(raw) {
       if (!Array.isArray(d.links)) d.links = [];
       if (d.importance === undefined) d.importance = null;
       if (d.dueTime === undefined) d.dueTime = null;
+      if (!Array.isArray(d.groceries)) d.groceries = [];
+      if (d.recipeLink === undefined) d.recipeLink = null;
+      (d.milestones || []).forEach(m => { if (!Array.isArray(m.subtasks)) m.subtasks = []; });
     });
   }
+  if (!raw.fridge || !Array.isArray(raw.fridge.items)) raw.fridge = { items: [] };
   // one-time upgrade to the pastel category set (renames in place, keeps ids)
   if (!raw.catsV2 && Array.isArray(raw.categories)) {
     const target = new Map(CATEGORY_SET.map(([id, name, color]) => [id, { name, color }]));
