@@ -704,10 +704,16 @@ function renderCard(d) {
     ),
   );
 
-  // dream steps: unfinished milestones orbit the cloud as catchable baby clouds,
-  // tinted to the dream's category hue
+  // dream steps: baby clouds in the same hue family as their parent —
+  // pink with pink, blue with blue, gold with gold, teal with teal
+  const STEP_TINTS = {
+    personal: 'rgba(252, 226, 242, .96)',
+    professional: 'rgba(224, 237, 250, .96)',
+    peace: 'rgba(253, 240, 213, .96)',
+    passion: 'rgba(224, 241, 237, .96)',
+  };
   const steps = d.milestones.filter(m => !m.done);
-  const stepTint = pastelize(cat?.color || color, 0.5);
+  const stepTint = STEP_TINTS[d.scope] || STEP_TINTS.personal;
   if (steps.length) {
     card.append(h('div', { class: 'dream-steps', 'aria-hidden': 'false' },
       ...steps.slice(0, 3).map((m, i) => {
