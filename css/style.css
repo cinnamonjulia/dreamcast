@@ -579,9 +579,9 @@ body[data-sparkle="3"] .bg-cloud {
 /* cards grid — loose organic float */
 #cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
-  gap: 56px 34px; /* roomy so orbiting step clouds never clip a neighbor */
-  padding: 34px 250px 30px 12px; /* leave room for Julia; extra room for cloud bumps & steps */
+  grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+  gap: 84px 60px; /* dreams breathe — orbiting step clouds get real sky */
+  padding: 58px 250px 44px 20px; /* room for Julia, cloud bumps & orbiting steps */
   align-items: start;
 }
 @media (max-width: 1360px) {
@@ -815,7 +815,7 @@ body[data-sparkle="3"] .bg-cloud {
   flex-direction: column;
   align-items: stretch;
   gap: 4px;
-  max-width: 196px;
+  max-width: 224px;
   min-width: 96px;
   border: none;
   background: rgba(255, 255, 255, .94);
