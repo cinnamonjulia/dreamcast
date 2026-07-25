@@ -602,7 +602,11 @@ function openTaskModal(dreamId, msId, stId) {
     ),
     h('div', { class: 'field-row' },
       h('div', { class: 'field' },
-        h('label', { text: 'Scheduled for' }),
+        h('label', {
+          text: (!st.scheduledFor && (m.dueDate || d.targetDate))
+            ? `Scheduled for — due ${m.dueDate || d.targetDate} with its step`
+            : 'Scheduled for',
+        }),
         h('input', {
           type: 'date', value: st.scheduledFor || '',
           onchange: e => { st.scheduledFor = e.target.value || null; touch(d); persist(); renderAll(); },
@@ -647,6 +651,13 @@ function openStepModal(dreamId, msId) {
         h('input', {
           type: 'text', value: m.text, maxlength: '160',
           onchange: e => { m.text = e.target.value.trim() || m.text; touch(d); persist(); renderAll(); },
+        }),
+      ),
+      h('div', { class: 'field' },
+        h('label', { text: d.targetDate && !m.dueDate ? `Due date — inheriting the dream's target (${d.targetDate})` : 'Due date' }),
+        h('input', {
+          type: 'date', value: m.dueDate || '',
+          onchange: e => { m.dueDate = e.target.value || null; touch(d); persist(); render(); renderAll(); },
         }),
       ),
       h('h3', { text: 'Tasks inside this step' }),
@@ -803,14 +814,16 @@ function renderCard(d) {
         const stTotal = (m.subtasks || []).length;
         const stDone = (m.subtasks || []).filter(s => s.done).length;
         const pct = stTotal ? Math.round((stDone / stTotal) * 100) : 0;
+        const effDue = m.dueDate || d.targetDate; // steps inherit the dream's target
         return h('button', {
           class: `step-cloud sc-${i}`,
           style: `background:${stepTint}`,
-          title: `Dream step: ${m.text} — click to open`,
+          title: `Dream step: ${m.text}${effDue ? ` · due ${effDue}${m.dueDate ? '' : ' (from the dream)'}` : ''} — click to open`,
           onclick: e => { e.stopPropagation(); openStepModal(d.id, m.id); },
         },
           h('span', { class: 'step-row' },
             h('span', { class: 'step-text', text: m.text }),
+            effDue ? h('span', { class: 'st-count' + (m.dueDate ? '' : ' st-inherited'), text: effDue.slice(5).replace('-', '/') }) : null,
             stTotal ? h('span', { class: 'st-count', text: `${stDone}/${stTotal}` }) : null,
             (m.links || []).length ? h('span', { class: 'st-count', text: `${m.links.length} ↗` }) : null,
           ),

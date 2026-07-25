@@ -881,6 +881,7 @@ body[data-sparkle="3"] .bg-cloud {
 .step-cloud:nth-child(3n) { animation-delay: -2.9s; }
 .step-cloud:nth-child(4n) { animation-delay: -.8s; }
 .step-more { font-weight: 800; color: var(--periwinkle); flex-direction: row; min-width: 0; align-self: center; }
+.st-inherited { opacity: .65; font-style: italic; }
 
 /* ============================ RECENT STRIP ============================ */
 
