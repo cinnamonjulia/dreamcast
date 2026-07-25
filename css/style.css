@@ -580,8 +580,8 @@ body[data-sparkle="3"] .bg-cloud {
 #cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
-  gap: 40px 24px;
-  padding: 34px 250px 26px 4px; /* leave room for Julia; extra top room for cloud bumps */
+  gap: 56px 34px; /* roomy so orbiting step clouds never clip a neighbor */
+  padding: 34px 250px 30px 12px; /* leave room for Julia; extra room for cloud bumps & steps */
   align-items: start;
 }
 @media (max-width: 1360px) {
@@ -811,7 +811,10 @@ body[data-sparkle="3"] .bg-cloud {
 .step-cloud {
   position: absolute;
   z-index: 3;
-  max-width: 138px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 128px;
   border: none;
   background: rgba(255, 255, 255, .94);
   border-radius: 999px;
@@ -851,10 +854,10 @@ body[data-sparkle="3"] .bg-cloud {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.sc-0 { top: -24px; right: 6%; animation-delay: -1.2s; }
-.sc-1 { left: -16px; top: 44%; animation-delay: -2.8s; }
-.sc-2 { bottom: -18px; right: 22%; animation-delay: -.6s; }
-.sc-3 { bottom: -16px; left: 10%; animation-delay: -2s; }
+.sc-0 { top: -18px; right: 10%; animation-delay: -1.2s; }
+.sc-1 { left: -8px; top: 46%; animation-delay: -2.8s; }
+.sc-2 { bottom: -12px; right: 24%; animation-delay: -.6s; }
+.sc-3 { bottom: -10px; left: 12%; animation-delay: -2s; }
 .step-more { font-weight: 800; color: var(--periwinkle); }
 
 /* ============================ RECENT STRIP ============================ */

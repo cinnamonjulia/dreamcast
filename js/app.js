@@ -554,9 +554,9 @@ const SCOPE_TINTS = {
     mid: 'rgba(244, 187, 100, .9)',
     long: 'rgba(252, 231, 186, .88)',
   },
-  passion: {                           // teal — the apps & things she builds
-    mid: 'rgba(88, 184, 181, .9)',
-    long: 'rgba(203, 236, 234, .88)',
+  passion: {                           // misty teal — the apps & things she builds
+    mid: 'rgba(121, 184, 174, .9)',
+    long: 'rgba(205, 232, 226, .88)',
   },
 };
 
@@ -580,6 +580,64 @@ function catchMilestoneFromSky(d, m) {
   cardEl?.querySelector('.progress-fill')?.classList.add('pulse');
   milestoneCatch(cardEl).then(renderAll);
   setTimeout(renderAll, 500);
+}
+
+/* the step editor: a dream step sits between a dream and a task — it holds
+   its own schedulable tasks and can be caught when it's ready */
+function openStepModal(dreamId, msId) {
+  const d = findDream(dreamId);
+  const m = d?.milestones.find(x => x.id === msId);
+  if (!m) return;
+  const body = h('div');
+  const render = () => {
+    const stText = h('input', { type: 'text', placeholder: '＋ task…', maxlength: '140', style: 'flex:2;min-width:0' });
+    const stDate = h('input', { type: 'date', 'aria-label': 'Schedule task', style: 'flex:1;min-width:0' });
+    setChildren(body,
+      h('p', { style: 'font-size:12px;font-weight:700;color:var(--periwinkle);margin:0 0 10px', text: `A step of “${d.title}”` }),
+      h('div', { class: 'field' },
+        h('label', { text: 'Step' }),
+        h('input', {
+          type: 'text', value: m.text, maxlength: '160',
+          onchange: e => { m.text = e.target.value.trim() || m.text; touch(d); persist(); renderAll(); },
+        }),
+      ),
+      h('h3', { text: 'Tasks inside this step' }),
+      (m.subtasks || []).length ? h('ul', { class: 'ms-list' },
+        ...m.subtasks.map((st, si) =>
+          h('li', { class: 'ms-item subtask-item' + (st.done ? ' done' : '') },
+            h('button', {
+              class: 'ms-check st-check', text: st.done ? '✓' : '',
+              'aria-label': (st.done ? 'Uncheck: ' : 'Complete: ') + st.text,
+              onclick: () => {
+                if (st.done) { st.done = false; st.doneAt = null; touch(d); persist(); render(); renderAll(); }
+                else { completeSubtask(d.id, m.id, st.id, null); render(); }
+              },
+            }),
+            h('span', { class: 'ms-text', text: st.text }),
+            st.scheduledFor ? h('span', { class: 'pill-time', text: st.scheduledFor.slice(5).replace('-', '/') }) : null,
+            h('div', { class: 'ms-tools' },
+              h('button', { text: '✕', 'aria-label': 'Delete task', onclick: () => { m.subtasks.splice(si, 1); touch(d); persist(); render(); renderAll(); } }),
+            ),
+          )))
+        : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'No tasks yet — break this step into little catches.' }),
+      h('form', {
+        class: 'ms-add subtask-add',
+        onsubmit: e => {
+          e.preventDefault();
+          const text = stText.value.trim();
+          if (!text) return;
+          m.subtasks.push({ id: uuid(), text, done: false, doneAt: null, scheduledFor: stDate.value || null });
+          touch(d); persist(); render(); renderAll();
+        },
+      }, stText, stDate, h('button', { class: 'btn btn-secondary', type: 'submit', text: '＋' })),
+      h('div', { class: 'modal-actions' },
+        h('button', { class: 'btn btn-primary', text: 'Catch this step ✦', onclick: () => { closeModal(); catchMilestoneFromSky(d, m); } }),
+        h('button', { class: 'btn btn-secondary', text: 'Open the dream', onclick: () => { closeModal(); openDreamModal(d.id); } }),
+      ),
+    );
+  };
+  render();
+  openModal(h('div', {}, h('h2', { text: 'Dream step ☁' }), body), { slim: true });
 }
 
 function renderCard(d) {
@@ -646,16 +704,25 @@ function renderCard(d) {
     ),
   );
 
-  // dream steps: unfinished milestones orbit the cloud as catchable baby clouds
+  // dream steps: unfinished milestones orbit the cloud as catchable baby clouds,
+  // tinted to the dream's category hue
   const steps = d.milestones.filter(m => !m.done);
+  const stepTint = pastelize(cat?.color || color, 0.5);
   if (steps.length) {
     card.append(h('div', { class: 'dream-steps', 'aria-hidden': 'false' },
-      ...steps.slice(0, 3).map((m, i) =>
-        h('button', {
+      ...steps.slice(0, 3).map((m, i) => {
+        const stTotal = (m.subtasks || []).length;
+        const stDone = (m.subtasks || []).filter(s => s.done).length;
+        return h('button', {
           class: `step-cloud sc-${i}`,
-          title: `Dream step: ${m.text} — click to catch it ✦`,
-          onclick: e => { e.stopPropagation(); catchMilestoneFromSky(d, m); },
-        }, h('span', { class: 'step-text', text: m.text }))),
+          style: `background:${stepTint}`,
+          title: `Dream step: ${m.text} — click to open`,
+          onclick: e => { e.stopPropagation(); openStepModal(d.id, m.id); },
+        },
+          h('span', { class: 'step-text', text: m.text }),
+          stTotal ? h('span', { class: 'st-count', text: `${stDone}/${stTotal}` }) : null,
+        );
+      }),
       steps.length > 3 ? h('button', {
         class: 'step-cloud sc-3 step-more',
         title: `${steps.length - 3} more steps — open the dream`,
@@ -1605,7 +1672,7 @@ const PETAL_COLORS = {
   personal: ['#F7A8D3', '#E480B8'],      // pink
   professional: ['#9FB6F2', '#7A93D6'],  // purple-blue
   peace: ['#FBE18F', '#E3BE5C'],         // yellow
-  passion: ['#8ADAD5', '#5FB8B2'],       // teal
+  passion: ['#A9D6CE', '#79B8AE'],       // misty teal
 };
 
 function localDateOf(iso) {
@@ -1924,15 +1991,16 @@ function hideFridge() {
 }
 
 function wireFridge() {
-  $('#fridge-dock').addEventListener('click', showFridge);
-  $('#fridge-back').addEventListener('click', hideFridge);
-  $('#stock-kitchen').addEventListener('click', openStockModal);
-  $('#fridge-unit').addEventListener('click', e => {
+  $('#fridge-dock')?.addEventListener('click', showFridge);
+  $('#fridge-back')?.addEventListener('click', hideFridge);
+  $('#stock-kitchen')?.addEventListener('click', openStockModal);
+  $('#fridge-unit')?.addEventListener('click', e => {
     if (e.target.closest('.food-item')) return;
     $('#fridge-unit').classList.toggle('open');
     sounds.tick();
   });
   const trash = $('#trash-can');
+  if (!trash) return;
   trash.addEventListener('click', clearExpired);
   trash.addEventListener('dragover', e => { e.preventDefault(); trash.classList.add('drag-over'); });
   trash.addEventListener('dragleave', () => trash.classList.remove('drag-over'));
@@ -2243,8 +2311,8 @@ function init() {
   wireQuickAdd();
   wireHoverCast();
   wireFridge();
-  $('#tasks-log').addEventListener('click', openTasksModal);
-  $('#peony-button').addEventListener('click', openTasksModal);
+  $('#tasks-log')?.addEventListener('click', openTasksModal);
+  $('#peony-button')?.addEventListener('click', openTasksModal);
   initAudioOnGesture();
   renderAll();
   startIdleLife();
