@@ -809,28 +809,27 @@ body[data-sparkle="3"] .bg-cloud {
 
 /* ---- dream steps: baby clouds nestled at the base of their dream ---- */
 .dream-steps {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 9px 8px;
-  margin: 12px -8px -20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px 8px;
+  align-items: start;
+  margin: 12px -8px -16px;
   position: relative;
   z-index: 3;
 }
 .step-cloud {
   position: relative;
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 4px;
-  flex: 0 1 auto;
-  max-width: 210px;
-  min-width: 84px;
+  width: 100%;
+  min-width: 0;
   border: none;
   background: rgba(255, 255, 255, .94);
-  border-radius: 18px;
-  padding: 8px 14px;
-  font-size: 12px;
+  border-radius: 16px;
+  padding: 7px 11px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink);
   box-shadow: 0 6px 16px rgba(142, 151, 232, .35);
