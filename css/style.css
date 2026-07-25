@@ -808,11 +808,11 @@ body[data-sparkle="3"] .bg-cloud {
 }
 
 /* ---- dream steps: baby clouds nestled at the base of their dream ----
-   flex-wrap so a step with a longer name widens (up to the full row)
-   and always shows a readable line of text */
+   as many columns as fit at a readable width; step names WRAP instead
+   of ever being clipped — the cloud grows to hold its whole name */
 .dream-steps {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   align-items: stretch;
   gap: 10px 8px;
   margin: 12px -8px -16px;
@@ -824,10 +824,10 @@ body[data-sparkle="3"] .bg-cloud {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  justify-content: flex-start;
   gap: 4px;
-  flex: 1 1 auto;
-  min-width: 30%;
-  max-width: 100%;
+  width: 100%;
+  min-width: 0;
   border: none;
   background: rgba(255, 255, 255, .94);
   border-radius: 16px;
@@ -863,9 +863,8 @@ body[data-sparkle="3"] .bg-cloud {
 .step-cloud:hover { transform: scale(1.1); background: #FFFFFF; z-index: 6; }
 .step-text {
   display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
   line-height: 1.35;
   text-align: left;
 }
