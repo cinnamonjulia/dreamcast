@@ -320,8 +320,8 @@ function renderSubtaskPill({ dream, ms, st, overdue }) {
     h('button', {
       class: 'pill-title', style: 'background:none;border:none;padding:0;font:inherit;font-weight:700;cursor:pointer;',
       text: st.text,
-      title: `Step of "${ms.text}" in "${dream.title}"`,
-      onclick: () => openDreamModal(dream.id),
+      title: `Step of "${ms.text}" in "${dream.title}" — click to edit`,
+      onclick: () => openTaskModal(dream.id, ms.id, st.id),
     }),
     h('span', { class: 'pill-time', text: st.scheduledFor.slice(5).replace('-', '/') }),
     h('span', { class: 'pill-parent', text: dream.title.slice(0, 14) + (dream.title.length > 14 ? '…' : '') }),
@@ -584,6 +584,48 @@ function catchMilestoneFromSky(d, m) {
   setTimeout(renderAll, 500);
 }
 
+/* the task editor: every task is click-to-edit wherever it appears */
+function openTaskModal(dreamId, msId, stId) {
+  const d = findDream(dreamId);
+  const m = d?.milestones.find(x => x.id === msId);
+  const st = m?.subtasks.find(x => x.id === stId);
+  if (!st) return;
+  openModal(h('div', {},
+    h('h2', { text: 'Task ✦' }),
+    h('p', { style: 'font-size:12px;font-weight:700;color:var(--periwinkle);margin:0 0 10px', text: `In step “${m.text}” of “${d.title}”` }),
+    h('div', { class: 'field' },
+      h('label', { text: 'Task' }),
+      h('input', {
+        type: 'text', value: st.text, maxlength: '140',
+        onchange: e => { st.text = e.target.value.trim() || st.text; touch(d); persist(); renderAll(); },
+      }),
+    ),
+    h('div', { class: 'field-row' },
+      h('div', { class: 'field' },
+        h('label', { text: 'Scheduled for' }),
+        h('input', {
+          type: 'date', value: st.scheduledFor || '',
+          onchange: e => { st.scheduledFor = e.target.value || null; touch(d); persist(); renderAll(); },
+        }),
+      ),
+      h('div', { class: 'field' },
+        h('label', { text: 'Category' }),
+        categorySelect(st.category || d.category, v => { st.category = v; touch(d); persist(); renderAll(); }),
+      ),
+    ),
+    h('div', { class: 'modal-actions' },
+      st.done
+        ? h('button', { class: 'btn btn-secondary', text: '↩ Not done after all', onclick: () => { st.done = false; st.doneAt = null; touch(d); persist(); renderAll(); closeModal(); } })
+        : h('button', { class: 'btn btn-primary', text: 'Catch it ✦', onclick: () => { closeModal(); completeSubtask(d.id, m.id, st.id, null); } }),
+      h('button', { class: 'btn btn-secondary', text: 'Open the step', onclick: () => openStepModal(d.id, m.id) }),
+      h('button', {
+        class: 'btn btn-danger', text: 'Delete',
+        onclick: () => { m.subtasks = m.subtasks.filter(x => x.id !== st.id); touch(d); persist(); renderAll(); closeModal(); },
+      }),
+    ),
+  ), { slim: true });
+}
+
 /* the step editor: a dream step sits between a dream and a task — it holds
    its own schedulable tasks and can be caught when it's ready */
 function openStepModal(dreamId, msId) {
@@ -624,7 +666,7 @@ function openStepModal(dreamId, msId) {
                   else { completeSubtask(d.id, m.id, st.id, null); render(); }
                 },
               }),
-              h('span', { class: 'ms-text', text: st.text }),
+              h('button', { class: 'ms-text ms-text-btn', text: st.text, title: 'Edit this task', onclick: () => openTaskModal(d.id, m.id, st.id) }),
               st.scheduledFor ? h('span', { class: 'pill-time', text: st.scheduledFor.slice(5).replace('-', '/') }) : null,
               h('div', { class: 'ms-tools' },
                 h('button', { text: '✕', 'aria-label': 'Delete task', onclick: () => { m.subtasks.splice(si, 1); touch(d); persist(); render(); renderAll(); } }),
@@ -966,7 +1008,7 @@ function openDreamModal(id) {
                   else { completeSubtask(d.id, m.id, st.id, null); renderMs(); }
                 },
               }),
-              h('span', { class: 'ms-text', text: st.text }),
+              h('button', { class: 'ms-text ms-text-btn', text: st.text, title: 'Edit this task', onclick: () => openTaskModal(d.id, m.id, st.id) }),
               st.scheduledFor ? h('span', { class: 'pill-time', text: st.scheduledFor.slice(5).replace('-', '/') }) : null,
               h('div', { class: 'ms-tools' },
                 h('button', { text: '✕', 'aria-label': 'Delete subtask', onclick: () => { m.subtasks.splice(si, 1); touch(d); persist(); renderMs(); renderAll(); } }),

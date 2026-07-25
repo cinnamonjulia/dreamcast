@@ -815,7 +815,7 @@ body[data-sparkle="3"] .bg-cloud {
   flex-direction: column;
   align-items: stretch;
   gap: 4px;
-  max-width: 178px;
+  max-width: 196px;
   min-width: 96px;
   border: none;
   background: rgba(255, 255, 255, .94);
@@ -851,10 +851,13 @@ body[data-sparkle="3"] .bg-cloud {
 }
 .step-cloud:hover { transform: scale(1.1); background: #FFFFFF; z-index: 6; }
 .step-text {
-  display: block;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.3;
+  text-align: left;
 }
 .step-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .step-progress {
