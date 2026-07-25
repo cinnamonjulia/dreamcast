@@ -214,6 +214,7 @@ function migrate(raw) {
       (d.milestones || []).forEach(m => {
         if (!Array.isArray(m.subtasks)) m.subtasks = [];
         if (!Array.isArray(m.links)) m.links = [];
+        m.subtasks.forEach(st => { if (st.category === undefined) st.category = null; });
       });
     });
   }

@@ -1185,6 +1185,19 @@ body[data-sparkle="3"] .bg-cloud {
   padding: 1px 7px;
 }
 .subtask-add { margin: 2px 0 8px; }
+.subtask-item-wrap { list-style: none; margin: 6px 0; }
+.st-cat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--periwinkle);
+  margin-left: 30px;
+}
+.st-cat-tag .cat-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .subtask-add input[type=text] { font-size: 13px; padding: 5px 10px; }
 .subtask-add input[type=date] { font-size: 12px; padding: 5px 8px; }
 .subtask-add .btn { padding: 4px 11px; }

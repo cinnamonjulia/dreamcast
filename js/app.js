@@ -306,6 +306,7 @@ function scheduledSubtasks(cadence) {
 }
 
 function renderSubtaskPill({ dream, ms, st, overdue }) {
+  const cat = state.categories.find(c => c.id === (st.category || dream.category));
   const pill = h('li', {
     class: `tray-pill pill-subtask pill-${dream.scope}` + (overdue ? ' overdue' : ''),
     'data-id': st.id,
@@ -315,6 +316,7 @@ function renderSubtaskPill({ dream, ms, st, overdue }) {
       'aria-label': `Complete: ${st.text}`,
       onclick: e => { e.stopPropagation(); completeSubtask(dream.id, ms.id, st.id, pill); },
     }),
+    cat ? h('span', { class: 'cat-dot', style: `background:${cat.color}`, title: cat.name }) : null,
     h('button', {
       class: 'pill-title', style: 'background:none;border:none;padding:0;font:inherit;font-weight:700;cursor:pointer;',
       text: st.text,
@@ -589,9 +591,13 @@ function openStepModal(dreamId, msId) {
   const m = d?.milestones.find(x => x.id === msId);
   if (!m) return;
   const body = h('div');
+  const catInfo = id => state.categories.find(c => c.id === id);
   const render = () => {
     const stText = h('input', { type: 'text', placeholder: '＋ task…', maxlength: '140', style: 'flex:2;min-width:0' });
     const stDate = h('input', { type: 'date', 'aria-label': 'Schedule task', style: 'flex:1;min-width:0' });
+    const stCat = h('select', { 'aria-label': 'Task category', style: 'flex:1;min-width:0' },
+      ...state.categories.map(c => h('option', { value: c.id, text: c.name })));
+    stCat.value = d.category || state.categories[0]?.id;
     setChildren(body,
       h('p', { style: 'font-size:12px;font-weight:700;color:var(--periwinkle);margin:0 0 10px', text: `A step of “${d.title}”` }),
       h('div', { class: 'field' },
@@ -603,22 +609,29 @@ function openStepModal(dreamId, msId) {
       ),
       h('h3', { text: 'Tasks inside this step' }),
       (m.subtasks || []).length ? h('ul', { class: 'ms-list' },
-        ...m.subtasks.map((st, si) =>
-          h('li', { class: 'ms-item subtask-item' + (st.done ? ' done' : '') },
-            h('button', {
-              class: 'ms-check st-check', text: st.done ? '✓' : '',
-              'aria-label': (st.done ? 'Uncheck: ' : 'Complete: ') + st.text,
-              onclick: () => {
-                if (st.done) { st.done = false; st.doneAt = null; touch(d); persist(); render(); renderAll(); }
-                else { completeSubtask(d.id, m.id, st.id, null); render(); }
-              },
-            }),
-            h('span', { class: 'ms-text', text: st.text }),
-            st.scheduledFor ? h('span', { class: 'pill-time', text: st.scheduledFor.slice(5).replace('-', '/') }) : null,
-            h('div', { class: 'ms-tools' },
-              h('button', { text: '✕', 'aria-label': 'Delete task', onclick: () => { m.subtasks.splice(si, 1); touch(d); persist(); render(); renderAll(); } }),
+        ...m.subtasks.map((st, si) => {
+          const cat = catInfo(st.category || d.category);
+          return h('li', { class: 'subtask-item-wrap' },
+            cat ? h('span', { class: 'st-cat-tag' },
+              h('span', { class: 'cat-dot', style: `background:${cat.color}` }),
+              document.createTextNode(cat.name)) : null,
+            h('div', { class: 'ms-item subtask-item' + (st.done ? ' done' : '') },
+              h('button', {
+                class: 'ms-check st-check', text: st.done ? '✓' : '',
+                'aria-label': (st.done ? 'Uncheck: ' : 'Complete: ') + st.text,
+                onclick: () => {
+                  if (st.done) { st.done = false; st.doneAt = null; touch(d); persist(); render(); renderAll(); }
+                  else { completeSubtask(d.id, m.id, st.id, null); render(); }
+                },
+              }),
+              h('span', { class: 'ms-text', text: st.text }),
+              st.scheduledFor ? h('span', { class: 'pill-time', text: st.scheduledFor.slice(5).replace('-', '/') }) : null,
+              h('div', { class: 'ms-tools' },
+                h('button', { text: '✕', 'aria-label': 'Delete task', onclick: () => { m.subtasks.splice(si, 1); touch(d); persist(); render(); renderAll(); } }),
+              ),
             ),
-          )))
+          );
+        }))
         : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'No tasks yet — break this step into little catches.' }),
       h('form', {
         class: 'ms-add subtask-add',
@@ -626,10 +639,10 @@ function openStepModal(dreamId, msId) {
           e.preventDefault();
           const text = stText.value.trim();
           if (!text) return;
-          m.subtasks.push({ id: uuid(), text, done: false, doneAt: null, scheduledFor: stDate.value || null });
+          m.subtasks.push({ id: uuid(), text, done: false, doneAt: null, scheduledFor: stDate.value || null, category: stCat.value || null });
           touch(d); persist(); render(); renderAll();
         },
-      }, stText, stDate, h('button', { class: 'btn btn-secondary', type: 'submit', text: '＋' })),
+      }, stText, stDate, stCat, h('button', { class: 'btn btn-secondary', type: 'submit', text: '＋' })),
       h('h3', { text: 'Links' }),
       (m.links || []).length ? h('ul', { class: 'ms-list' },
         ...m.links.map((l, li) =>
@@ -1799,6 +1812,7 @@ function openTasksModal() {
         } else if (!st.done && st.scheduledFor && st.scheduledFor > today && d.status === 'active') {
           upcoming.push({
             date: st.scheduledFor, text: st.text, dream: d.title, scope: d.scope,
+            category: st.category || d.category,
             open: () => openDreamModal(d.id),
             reschedule: v => { st.scheduledFor = v || null; touch(d); },
           });
@@ -1819,6 +1833,7 @@ function openTasksModal() {
           onchange: e => { u.reschedule(e.target.value); persist(); renderAll(); toast('Rescheduled ✦'); },
         }),
         h('span', { class: 'scope-glyph', text: scopeGlyph(u.scope) }),
+        (() => { const c = state.categories.find(x => x.id === u.category); return c ? h('span', { class: 'cat-dot', style: `background:${c.color}`, title: c.name }) : null; })(),
         h('a', { href: '#', text: u.text, onclick: e => { e.preventDefault(); closeModal(); u.open(); } }),
         u.dream ? h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }) : null,
       )))
