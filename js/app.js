@@ -532,11 +532,18 @@ const SCOPE_TINTS = {
     mid: 'rgba(244, 187, 100, .9)',
     long: 'rgba(252, 231, 186, .88)',
   },
+  passion: {                           // green — the apps & things she builds
+    mid: 'rgba(150, 208, 148, .9)',
+    long: 'rgba(216, 240, 210, .88)',
+  },
 };
 
-const SCOPE_GLYPHS = { personal: '✿', professional: '✦', peace: '☮' };
+const SCOPE_GLYPHS = { personal: '✿', professional: '✦', peace: '☮', passion: '⌗' };
 const scopeGlyph = s => SCOPE_GLYPHS[s] || '✿';
-const SCOPE_OPTIONS = [['personal', '✿ Personal'], ['professional', '✦ Professional'], ['peace', '☮ Peace']];
+const SCOPE_OPTIONS = [
+  ['personal', '✿ Personal'], ['professional', '✦ Professional'],
+  ['peace', '☮ Peace'], ['passion', '⌗ Passion'],
+];
 const NEGLECT_DAYS = 5;
 
 function renderCard(d) {
@@ -1519,6 +1526,7 @@ const PETAL_COLORS = {
   personal: ['#F7A8D3', '#E480B8'],      // pink
   professional: ['#9FB6F2', '#7A93D6'],  // purple-blue
   peace: ['#FBE18F', '#E3BE5C'],         // yellow
+  passion: ['#A8DCA4', '#7FBF7C'],       // green
 };
 
 function localDateOf(iso) {
