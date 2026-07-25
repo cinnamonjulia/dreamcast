@@ -462,10 +462,10 @@ body[data-sparkle="3"] .bg-cloud {
 }
 .tray-pill.imp-low { opacity: .68; }
 
-/* short-term goals wear the deepest shade: rose personal, blue work, gold haven */
-.tray-pill.pill-personal { background: rgba(233, 126, 199, .92); }
-.tray-pill.pill-professional { background: rgba(110, 155, 224, .92); }
-.tray-pill.pill-haven { background: rgba(238, 172, 74, .92); }
+/* task pills: lighter than the dream clouds — rose personal, blue work, gold peace */
+.tray-pill.pill-personal { background: rgba(247, 186, 226, .92); }
+.tray-pill.pill-professional { background: rgba(183, 208, 243, .92); }
+.tray-pill.pill-peace { background: rgba(250, 223, 170, .92); }
 
 /* scheduled subtask pills */
 .tray-pill.pill-subtask { border: 1.5px dashed rgba(43, 36, 64, .25); }
@@ -505,8 +505,33 @@ body[data-sparkle="3"] .bg-cloud {
 .tray-pill .cat-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
 .tray-pill .scope-glyph { font-size: 11px; opacity: .75; }
 
-.quick-add { margin-top: 8px; }
-.quick-add input {
+.quick-add { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.quick-add .qa-date, .quick-add .qa-cat {
+  border: 1.5px solid rgba(142, 151, 232, .35);
+  background: rgba(255, 255, 255, .55);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  color: var(--ink);
+  outline: none;
+  max-width: 120px;
+}
+.quick-add .qa-date:focus, .quick-add .qa-cat:focus { border-color: var(--pink); }
+
+/* task log rows */
+.log-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.log-row a { color: var(--blue); font-weight: 700; text-decoration: none; }
+.log-row a:hover { color: var(--pink); }
+.log-date {
+  border: 1.5px solid rgba(142, 151, 232, .4);
+  border-radius: 10px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  background: rgba(255, 255, 255, .85);
+}
+.log-restore { padding: 3px 10px; font-size: 11.5px; margin-left: auto; }
+
+.quick-add input[type=text] {
   width: min(100%, 260px);
   border: 1.5px dashed rgba(142,151,232,.5);
   background: rgba(255,255,255,.55);
@@ -1300,7 +1325,23 @@ body[data-sparkle="3"] .bg-cloud {
 .food-item:nth-child(2n) { animation-delay: -1.4s; }
 .food-item:nth-child(3n) { animation-delay: -2.6s; }
 .food-item:hover { transform: scale(1.18); z-index: 5; }
+.food-item svg { filter: hue-rotate(var(--hue, 0deg)); }
 .food-item.expired { filter: grayscale(.7) brightness(.92); }
+
+/* the closer to expiring, the more they fidget */
+.food-item.exp-soon { animation: food-wiggle 1.6s ease-in-out infinite; }
+.food-item.exp-now { animation: food-shake .55s ease-in-out infinite; }
+@keyframes food-wiggle {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(-5deg) translateY(-2px); }
+  75% { transform: rotate(5deg) translateY(-1px); }
+}
+@keyframes food-shake {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  20% { transform: rotate(-9deg) translateY(-3px); }
+  45% { transform: rotate(8deg) translateY(-1px); }
+  70% { transform: rotate(-6deg) translateY(-3px); }
+}
 .food-item.expired::before {
   content: '!';
   position: absolute;

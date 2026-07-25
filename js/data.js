@@ -70,6 +70,7 @@ export function makeDream(partial = {}) {
     links: [],                // [{ id, title, url }] — resources nested in the card
     importance: null,         // 'high' | null | 'low' — short-goal priority star
     dueTime: null,            // 'HH:MM' — optional time-bound deadline for short goals
+    scheduledFor: null,       // 'YYYY-MM-DD' — short goals can be scheduled ahead
     groceries: [],            // grocery list — completing the goal stocks the fridge
     recipeLink: null,         // recipe URL — completing the goal adds a dish to the fridge
     manualPercent: null,      // used only when no milestones
@@ -204,6 +205,8 @@ function migrate(raw) {
       if (d.dueTime === undefined) d.dueTime = null;
       if (!Array.isArray(d.groceries)) d.groceries = [];
       if (d.recipeLink === undefined) d.recipeLink = null;
+      if (d.scheduledFor === undefined) d.scheduledFor = null;
+      if (d.scope === 'haven') d.scope = 'peace';
       (d.milestones || []).forEach(m => { if (!Array.isArray(m.subtasks)) m.subtasks = []; });
     });
   }

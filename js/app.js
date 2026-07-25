@@ -158,6 +158,7 @@ function renderAll() {
   renderTray();
   renderSky();
   renderRecent();
+  renderQuickAddSelects();
   renderJar();
   renderPeony();
   renderMute();
@@ -240,8 +241,17 @@ function renderHorizon() {
 
 function shortGoals(cadence) {
   const rank = { high: 0, low: 2 };
+  const today = todayISO();
+  const wk = weekKey();
   return state.dreams
-    .filter(d => d.status === 'active' && d.horizon === 'short' && d.cadence === cadence && matchesScopeCat(d))
+    .filter(d => {
+      if (d.status !== 'active' || d.horizon !== 'short' || !matchesScopeCat(d)) return false;
+      if (d.scheduledFor && d.scheduledFor > today) {
+        // scheduled ahead: surfaces in This Week when its week arrives, else lives in the task log
+        return cadence === 'this-week' && weekKey(new Date(d.scheduledFor + 'T12:00')) === wk;
+      }
+      return d.cadence === cadence;
+    })
     .sort((a, b) =>
       ((rank[a.importance] ?? 1) - (rank[b.importance] ?? 1)) ||
       ((a.dueTime || '99:99') > (b.dueTime || '99:99') ? 1 : (a.dueTime || '99:99') < (b.dueTime || '99:99') ? -1 : 0) ||
@@ -326,7 +336,7 @@ function completeSubtask(dreamId, msId, stId, pillEl) {
   st.done = true;
   st.doneAt = new Date().toISOString();
   touch(d);
-  state.jar.push({ date: new Date().toISOString(), dreamId: d.id, kind: 'quick' });
+  state.jar.push({ date: new Date().toISOString(), dreamId: d.id, kind: 'quick', scope: d.scope });
   bumpActivity(state);
   persist();
   pillEl?.classList.add('completing');
@@ -388,14 +398,23 @@ function renderTrayPill(d) {
       onclick: () => openQuickGoalModal(d.id),
     }),
     d.dueTime ? h('span', { class: 'pill-time', text: formatTime(d.dueTime) }) : null,
+    d.scheduledFor && d.scheduledFor > todayISO()
+      ? h('span', { class: 'pill-time', text: d.scheduledFor.slice(5).replace('-', '/') }) : null,
     d.linkedDreamId ? h('span', { class: 'pill-link-glyph', title: 'Feeds a bigger dream', text: '☁️' }) : null,
-    d.groceries?.length ? h('button', {
-      class: 'pill-note-btn', title: 'View grocery list', text: '▤',
-      onclick: e => { e.stopPropagation(); openGroceryNote(d.id); },
+    isGroceryTask(d) ? h('button', {
+      class: 'pill-note-btn', title: 'Grocery list', text: '▤',
+      onclick: e => {
+        e.stopPropagation();
+        if (d.groceries?.length) openGroceryNote(d.id); else openQuickGoalModal(d.id);
+      },
     }) : null,
     h('span', { class: 'scope-glyph', text: scopeGlyph(d.scope) }),
   );
   return pill;
+}
+
+function isGroceryTask(d) {
+  return /grocer|market|food ?shop/i.test(d.title) || (d.groceries?.length > 0);
 }
 
 function completeQuickGoal(id, pillEl) {
@@ -404,7 +423,7 @@ function completeQuickGoal(id, pillEl) {
   d.status = 'achieved';
   d.achievedAt = new Date().toISOString();
   touch(d);
-  state.jar.push({ date: new Date().toISOString(), dreamId: d.id, kind: 'quick' });
+  state.jar.push({ date: new Date().toISOString(), dreamId: d.id, kind: 'quick', scope: d.scope });
   bumpActivity(state);
 
   if (d.linkedDreamId) {
@@ -509,15 +528,15 @@ const SCOPE_TINTS = {
     mid: 'rgba(126, 168, 230, .9)',
     long: 'rgba(206, 224, 246, .88)',
   },
-  haven: {                             // warm gold — home, order, self-care
+  peace: {                             // warm gold — home, order, self-care
     mid: 'rgba(244, 187, 100, .9)',
     long: 'rgba(252, 231, 186, .88)',
   },
 };
 
-const SCOPE_GLYPHS = { personal: '✿', professional: '✦', haven: '⌂' };
+const SCOPE_GLYPHS = { personal: '✿', professional: '✦', peace: '☮' };
 const scopeGlyph = s => SCOPE_GLYPHS[s] || '✿';
-const SCOPE_OPTIONS = [['personal', '✿ Personal'], ['professional', '✦ Professional'], ['haven', '⌂ Haven']];
+const SCOPE_OPTIONS = [['personal', '✿ Personal'], ['professional', '✦ Professional'], ['peace', '☮ Peace']];
 const NEGLECT_DAYS = 5;
 
 function renderCard(d) {
@@ -1112,6 +1131,13 @@ function openQuickGoalModal(id) {
           onchange: e => { d.dueTime = e.target.value || null; touch(d); persist(); renderAll(); },
         }),
       ),
+      h('div', { class: 'field' },
+        h('label', { text: 'Scheduled for (optional)' }),
+        h('input', {
+          type: 'date', value: d.scheduledFor || '',
+          onchange: e => { d.scheduledFor = e.target.value || null; touch(d); persist(); renderAll(); },
+        }),
+      ),
     ),
     h('div', { class: 'field' },
       h('label', { text: 'Importance' }),
@@ -1487,39 +1513,73 @@ async function openSyncModal() {
   ), { slim: true });
 }
 
-/* ---------- the peony: petals bloom for each task done this week ---------- */
+/* ---------- the peony: a petal per task done TODAY, colored by scope ---------- */
 
-function tasksThisWeek() {
-  const wk = weekKey();
-  return state.jar.filter(e => e.kind === 'quick' && weekKey(new Date(e.date)) === wk).length;
+const PETAL_COLORS = {
+  personal: ['#F7A8D3', '#E480B8'],      // pink
+  professional: ['#9FB6F2', '#7A93D6'],  // purple-blue
+  peace: ['#FBE18F', '#E3BE5C'],         // yellow
+};
+
+function localDateOf(iso) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function tasksTodayScopes() {
+  const today = todayISO();
+  return state.jar
+    .filter(e => e.kind === 'quick' && localDateOf(e.date) === today)
+    .map(e => e.scope || findDream(e.dreamId)?.scope || 'personal');
 }
 
 function renderPeony() {
   const svg = $('#peony-svg');
   if (!svg) return;
-  const count = tasksThisWeek();
-  const petals = Math.min(count, 13);
+  const scopes = tasksTodayScopes();
+  const count = scopes.length;
+  const shown = Math.min(count, 126);
+
+  // concentric rings that grow with the day's harvest
+  const rings = [[6, 8], [10, 12.5], [14, 17], [18, 21.5], [22, 26], [26, 30.5], [30, 35]]; // [capacity, radius]
+  const cx = 32, cy = 30;
+  let placed = 0;
+  const ringDraws = [];
+  for (let r = 0; r < rings.length && placed < shown; r++) {
+    const [cap, radius] = rings[r];
+    const inRing = Math.min(cap, shown - placed);
+    let ring = '';
+    for (let i = 0; i < inRing; i++) {
+      const scope = scopes[placed + i] || 'personal';
+      const [fill, edge] = PETAL_COLORS[scope] || PETAL_COLORS.personal;
+      const a = (360 / cap) * i + r * 17;
+      const ry = Math.max(4, 9 - r * 0.7);
+      const rx = Math.max(2.6, 5 - r * 0.35);
+      ring += `<g transform="rotate(${a} ${cx} ${cy})"><ellipse cx="${cx}" cy="${cy - radius}" rx="${rx}" ry="${ry}" fill="${fill}" stroke="${edge}" stroke-width=".8" opacity=".95"/></g>`;
+    }
+    ringDraws.push(ring);
+    placed += inRing;
+  }
+
   let parts = `
-    <path d="M22 30 L22 48" stroke="#8FBF84" stroke-width="2.2" stroke-linecap="round"/>
-    <ellipse cx="16" cy="42" rx="5" ry="2.4" fill="#A5D9A2" transform="rotate(-28 16 42)"/>
-    <ellipse cx="28" cy="45" rx="5" ry="2.4" fill="#A5D9A2" transform="rotate(28 28 45)"/>`;
-  // outer ring of 8, then inner ring of 5 — bloom outer-first
-  for (let i = 0; i < Math.min(petals, 8); i++) {
-    const a = i * 45 + 22;
-    parts += `<g transform="rotate(${a} 22 19)"><ellipse cx="22" cy="8.5" rx="5.4" ry="9" fill="#F7B8D9" stroke="#E48BBD" stroke-width="1"/></g>`;
-  }
-  for (let i = 0; i < Math.max(0, petals - 8); i++) {
-    const a = i * 72;
-    parts += `<g transform="rotate(${a} 22 19)"><ellipse cx="22" cy="12" rx="4.2" ry="6.5" fill="#F49BC9" stroke="#E48BBD" stroke-width="1"/></g>`;
-  }
-  parts += `<circle cx="22" cy="19" r="${petals ? 4.5 : 3.5}" fill="#FBE7A2" stroke="#E8CF7E" stroke-width="1.2"/>`;
+    <path d="M${cx} ${cy + 12} L${cx} 68" stroke="#8FBF84" stroke-width="2.4" stroke-linecap="round"/>
+    <ellipse cx="${cx - 7}" cy="60" rx="6" ry="2.8" fill="#A5D9A2" transform="rotate(-28 ${cx - 7} 60)"/>
+    <ellipse cx="${cx + 7}" cy="64" rx="6" ry="2.8" fill="#A5D9A2" transform="rotate(28 ${cx + 7} 64)"/>`;
+  parts += ringDraws.reverse().join(''); // outer rings under, inner rings on top
+  parts += `<circle cx="${cx}" cy="${cy}" r="${count ? 4.5 : 3.5}" fill="#FBE7A2" stroke="#E8CF7E" stroke-width="1.2"/>`;
+  svg.setAttribute('viewBox', '0 0 64 72');
+  // the flower physically grows with the day's blooms
+  const size = 34 + Math.min(count, 100) * 0.22;
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size * 72 / 64);
   svg.innerHTML = parts;
+
   const badge = $('#peony-count');
   badge.hidden = count === 0;
   badge.textContent = count;
   $('#peony-button').title = count
-    ? `${count} task${count === 1 ? '' : 's'} bloomed this week ✿ — click for the task log`
-    : 'Finish tasks to bloom the peony — click for the task log';
+    ? `${count} task${count === 1 ? '' : 's'} bloomed today ✿ — click for the task log`
+    : 'Finish tasks to bloom today’s peony — click for the task log';
 }
 
 /* ---------- task log: scheduled ahead & caught in the past ---------- */
@@ -1530,13 +1590,25 @@ function openTasksModal() {
   const past = [];
   for (const d of state.dreams) {
     if (d.horizon === 'short' && d.status === 'achieved' && d.achievedAt) {
-      past.push({ date: d.achievedAt, text: d.title, kind: 'goal' });
+      past.push({ date: d.achievedAt, text: d.title, kind: 'goal', restore: () => { d.status = 'active'; d.achievedAt = null; touch(d); } });
+    }
+    if (d.horizon === 'short' && d.status === 'active' && d.scheduledFor && d.scheduledFor > today) {
+      upcoming.push({
+        date: d.scheduledFor, text: d.title, dream: null, scope: d.scope,
+        open: () => openQuickGoalModal(d.id),
+        reschedule: v => { d.scheduledFor = v || null; touch(d); },
+      });
     }
     for (const m of d.milestones) {
       for (const st of (m.subtasks || [])) {
-        if (st.done && st.doneAt) past.push({ date: st.doneAt, text: st.text, kind: 'subtask', dream: d.title });
-        else if (!st.done && st.scheduledFor && st.scheduledFor > today && d.status === 'active') {
-          upcoming.push({ date: st.scheduledFor, text: st.text, dream: d.title, id: d.id });
+        if (st.done && st.doneAt) {
+          past.push({ date: st.doneAt, text: st.text, kind: 'subtask', dream: d.title, restore: () => { st.done = false; st.doneAt = null; touch(d); } });
+        } else if (!st.done && st.scheduledFor && st.scheduledFor > today && d.status === 'active') {
+          upcoming.push({
+            date: st.scheduledFor, text: st.text, dream: d.title, scope: d.scope,
+            open: () => openDreamModal(d.id),
+            reschedule: v => { st.scheduledFor = v || null; touch(d); },
+          });
         }
       }
     }
@@ -1546,20 +1618,28 @@ function openTasksModal() {
 
   openModal(h('div', {},
     h('h2', { text: 'Task log ✦' }),
-    h('h3', { text: 'Scheduled ahead' }),
+    h('h3', { text: 'Scheduled ahead — click a date to move it' }),
     upcoming.length ? h('ul', { class: 'updates-list' },
-      ...upcoming.slice(0, 40).map(u => h('li', {},
-        h('span', { class: 'u-date', text: u.date }),
-        h('a', { href: '#', text: u.text, onclick: e => { e.preventDefault(); closeModal(); openDreamModal(u.id); } }),
-        h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }),
+      ...upcoming.slice(0, 40).map(u => h('li', { class: 'log-row' },
+        h('input', {
+          type: 'date', class: 'log-date', value: u.date, 'aria-label': `Reschedule ${u.text}`,
+          onchange: e => { u.reschedule(e.target.value); persist(); renderAll(); toast('Rescheduled ✦'); },
+        }),
+        h('span', { class: 'scope-glyph', text: scopeGlyph(u.scope) }),
+        h('a', { href: '#', text: u.text, onclick: e => { e.preventDefault(); closeModal(); u.open(); } }),
+        u.dream ? h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }) : null,
       )))
-      : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'Nothing scheduled yet — add dated subtasks inside a dream’s milestones.' }),
-    h('h3', { text: 'Caught in the past' }),
+      : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'Nothing scheduled yet — date a task in the tray or a subtask inside a dream.' }),
+    h('h3', { text: 'Caught in the past — bring one back if it needs another round' }),
     past.length ? h('ul', { class: 'updates-list' },
-      ...past.slice(0, 60).map(u => h('li', {},
+      ...past.slice(0, 60).map(u => h('li', { class: 'log-row' },
         h('span', { class: 'u-date', text: u.date.slice(0, 10) }),
         document.createTextNode(u.text),
         u.dream ? h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }) : null,
+        h('button', {
+          class: 'btn btn-secondary log-restore', text: '↩ bring back',
+          onclick: () => { u.restore(); persist(); renderAll(); closeModal(); openTasksModal(); toast('Back in the tray ✦'); },
+        }),
       )))
       : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'No tasks caught yet — today is a fine day to start.' }),
   ));
@@ -1614,6 +1694,14 @@ function isExpired(item) {
   return item.expiresAt && new Date(item.expiresAt).getTime() < Date.now();
 }
 
+function expiryMotionClass(item) {
+  if (!item.expiresAt) return '';
+  const days = (new Date(item.expiresAt).getTime() - Date.now()) / 86400000;
+  if (days < 1) return ' exp-now';    // frantic — use me!
+  if (days < 3) return ' exp-soon';   // getting antsy
+  return '';
+}
+
 function renderFridge() {
   const items = state.fridge.items;
   const areas = { fridge: '.fridge-shelf', pantry: '.pantry-shelf' };
@@ -1621,13 +1709,17 @@ function renderFridge() {
     const shelves = $$(sel);
     shelves.forEach(s => s.replaceChildren());
     items.filter(i => i.area === area).forEach((item, idx) => {
+      const used = item.usedPct ? ` · ${100 - item.usedPct}% left` : '';
+      const hash = [...item.id].reduce((a, c) => a + c.charCodeAt(0), 0);
       const el = h('span', {
-        class: 'food-item' + (isExpired(item) ? ' expired' : ''),
+        class: 'food-item' + (isExpired(item) ? ' expired' : '') + expiryMotionClass(item),
         draggable: 'true',
         'data-id': item.id,
-        'data-label': `${item.name} · ${expiryLabel(item)}`,
+        'data-label': `${item.name} · ${expiryLabel(item)}${used}`,
+        style: `--hue:${((hash % 7) - 3) * 9}deg`,
         html: foodIconSvg(item.icon),
         ondragstart: e => e.dataTransfer.setData('text/plain', item.id),
+        onclick: e => { e.stopPropagation(); openFoodModal(item.id); },
       });
       shelves[idx % shelves.length].appendChild(el);
     });
@@ -1637,6 +1729,64 @@ function renderFridge() {
   $('#fridge-summary').textContent = total
     ? `${total} item${total === 1 ? '' : 's'}${expired ? ` · ${expired} expired` : ''}`
     : 'empty — finish a grocery-shopping task to stock it';
+}
+
+function openFoodModal(id) {
+  const item = state.fridge.items.find(i => i.id === id);
+  if (!item) return;
+  openModal(h('div', {},
+    h('div', { style: 'text-align:center', html: foodIconSvg(item.icon, 72) }),
+    h('h2', { text: item.name, style: 'text-align:center' }),
+    h('p', { style: 'text-align:center;font-size:13px;font-weight:700;color:var(--periwinkle)', text: expiryLabel(item) }),
+    h('div', { class: 'field' },
+      h('label', { text: 'Expiration date' }),
+      h('input', {
+        type: 'date', value: item.expiresAt ? item.expiresAt.slice(0, 10) : '',
+        onchange: e => {
+          item.expiresAt = e.target.value ? new Date(e.target.value + 'T20:00').toISOString() : null;
+          persist(); renderFridge();
+        },
+      }),
+    ),
+    h('div', { class: 'field range-field' },
+      h('label', { text: `How much is used — ${item.usedPct || 0}%` }),
+      h('input', {
+        type: 'range', min: '0', max: '100', value: String(item.usedPct || 0),
+        oninput: e => {
+          item.usedPct = Number(e.target.value);
+          e.target.previousElementSibling.textContent = `How much is used — ${item.usedPct}%`;
+          persist(); renderFridge();
+        },
+      }),
+    ),
+    h('div', { class: 'modal-actions' },
+      h('button', { class: 'btn btn-danger', text: 'Toss in the trash', onclick: () => { removeFoodItem(id); closeModal(); } }),
+    ),
+  ), { slim: true });
+}
+
+function openStockModal() {
+  const ta = h('textarea', {
+    placeholder: 'milk\nrice\nfrozen peas\n…everything you have, one per line',
+    style: 'min-height:160px',
+  });
+  openModal(h('div', {},
+    h('h2', { text: 'Stock the kitchen ✦' }),
+    h('p', { style: 'font-size:13px;opacity:.75', text: 'Write down everything in your fridge and pantry — each item lands on the right shelf with an estimated shelf life.' }),
+    h('div', { class: 'field' }, ta),
+    h('div', { class: 'modal-actions' },
+      h('button', {
+        class: 'btn btn-primary', text: 'Put it all away ✦',
+        onclick: () => {
+          const names = ta.value.split('\n').map(x => x.trim()).filter(Boolean);
+          if (!names.length) return;
+          stockFridge(names);
+          persist();
+          closeModal();
+        },
+      }),
+    ),
+  ), { slim: true });
 }
 
 function removeFoodItem(id) {
@@ -1673,6 +1823,7 @@ function hideFridge() {
 function wireFridge() {
   $('#fridge-dock').addEventListener('click', showFridge);
   $('#fridge-back').addEventListener('click', hideFridge);
+  $('#stock-kitchen').addEventListener('click', openStockModal);
   $('#fridge-unit').addEventListener('click', e => {
     if (e.target.closest('.food-item')) return;
     $('#fridge-unit').classList.toggle('open');
@@ -1903,23 +2054,40 @@ function wireHeader() {
   });
 }
 
+/* quick-add inherits whichever scope/category tab is active — make a task on the
+   Professional tab and it's professional; on the Finances view, it's Finances */
+function renderQuickAddSelects() {
+  $$('.quick-add .qa-cat').forEach(sel => {
+    const prev = sel.value;
+    setChildren(sel, ...state.categories.map(c => h('option', { value: c.id, text: c.name })));
+    const preferred = state.settings.filterCategory || prev || state.settings.lastUsedCategory;
+    if (preferred && state.categories.some(c => c.id === preferred)) sel.value = preferred;
+  });
+}
+
 function wireQuickAdd() {
   $$('.quick-add').forEach(form => {
-    const input = form.querySelector('input');
+    const input = form.querySelector('input[type=text]');
+    const dateInput = form.querySelector('.qa-date');
+    const catSel = form.querySelector('.qa-cat');
     form.addEventListener('submit', e => {
       e.preventDefault();
       const title = input.value.trim();
       if (!title) return;
+      const scope = state.settings.filterScope !== 'all' ? state.settings.filterScope : 'personal';
       state.dreams.unshift(makeDream({
         title,
         horizon: 'short',
         cadence: form.dataset.cadence,
-        scope: 'personal',
-        category: state.settings.lastUsedCategory || state.categories[0]?.id,
+        scope,
+        category: catSel?.value || state.settings.lastUsedCategory || state.categories[0]?.id,
+        scheduledFor: dateInput?.value || null,
         status: 'active',
       }));
+      if (catSel?.value) state.settings.lastUsedCategory = catSel.value;
       persist(); renderAll(); sounds.tick();
       input.value = '';
+      if (dateInput) dateInput.value = '';
       input.focus();
     });
   });

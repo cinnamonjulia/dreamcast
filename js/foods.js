@@ -40,7 +40,7 @@ const ICONS = {
   coffee: `<path d="M10 14 Q10 10 14 10 L26 10 Q30 10 30 14 L30 30 Q30 34 26 34 L14 34 Q10 34 10 30 Z" fill="#D8B79A" ${O}/><path d="M10 18 L30 18" ${O}/><ellipse cx="20" cy="14" rx="4" ry="2" fill="#B98D66" ${O}/>${face(20, 26)}`,
   snacks: `<path d="M12 10 L28 10 L31 34 L9 34 Z" fill="#F5C0A0" ${O}/><g fill="#E89B6E"><circle cx="17" cy="18" r="1.2"/><circle cx="24" cy="22" r="1.2"/><circle cx="18" cy="28" r="1.2"/></g>${face(20, 21)}`,
   dip: `<path d="M9 20 Q9 17 12 17 L28 17 Q31 17 31 20 L31 28 Q31 33 26 33 L14 33 Q9 33 9 28 Z" fill="#F7E8D2" ${O}/><ellipse cx="20" cy="17" rx="11" ry="2.5" fill="#FBF3E4" ${O}/>${face(20, 25)}`,
-  dish: `<ellipse cx="20" cy="26" rx="13" ry="6" fill="#FBEFF5" ${O}/><ellipse cx="20" cy="24" rx="8" ry="4" fill="#F5C9A8" ${O}/><path d="M15 16 Q16 13 15 10 M20 16 Q21 13 20 10 M25 16 Q26 13 25 10" stroke="#C9C4D8" stroke-width="1.4" fill="none" stroke-linecap="round"/>`,
+  dish: `<path d="M15 9 Q16 6 15 4 M21 9 Q22 6 21 4 M27 9 Q28 6 27 4" stroke="#C9C4D8" stroke-width="1.3" fill="none" stroke-linecap="round"/><rect x="8" y="17" width="24" height="15" rx="4" fill="#CDE6F7" opacity=".9" ${O}/><rect x="6" y="12" width="28" height="6.5" rx="3.2" fill="#F5A8C7" ${O}/><path d="M11 24 Q14 27 17 24 Q20 27 23 24 Q26 27 29 24" stroke="#8FB8DC" stroke-width="1.3" fill="none"/>${face(20, 28)}`,
   generic: `<path d="M12 14 Q12 8 20 8 Q28 8 28 14 L30 30 Q30 34 26 34 L14 34 Q10 34 10 30 Z" fill="#DCE6F8" ${O}/><path d="M15 14 Q15 11 20 11 Q25 11 25 14" fill="none" ${O}/>${face(20, 24)}`,
 };
 

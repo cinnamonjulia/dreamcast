@@ -45,7 +45,7 @@
         <button class="chip" data-scope="all">All</button>
         <button class="chip" data-scope="personal">✿ Personal</button>
         <button class="chip" data-scope="professional">✦ Professional</button>
-        <button class="chip" data-scope="haven">⌂ Haven</button>
+        <button class="chip" data-scope="peace">☮ Peace</button>
       </div>
       <div class="chip-group" id="horizon-filter" role="group" aria-label="Horizon filter">
         <button class="chip" data-horizon="all">All</button>
@@ -156,13 +156,21 @@
     <div class="tray-group" data-cadence="today">
       <div class="tray-group-head"><h2>Today</h2><span class="caught-count" id="caught-today"></span></div>
       <ul class="tray-list" id="tray-today"></ul>
-      <form class="quick-add" data-cadence="today"><input type="text" placeholder="＋ quick goal…" aria-label="Add a goal for today" maxlength="120"></form>
+      <form class="quick-add" data-cadence="today">
+        <input type="text" placeholder="＋ quick goal…" aria-label="Add a goal for today" maxlength="120">
+        <input type="date" class="qa-date" aria-label="Schedule it for a day" title="Schedule for a day (optional)">
+        <select class="qa-cat" aria-label="Category"></select>
+      </form>
     </div>
     <div class="tray-divider"></div>
     <div class="tray-group" data-cadence="this-week">
       <div class="tray-group-head"><h2>This Week</h2><span class="caught-count" id="caught-week"></span></div>
       <ul class="tray-list" id="tray-week"></ul>
-      <form class="quick-add" data-cadence="this-week"><input type="text" placeholder="＋ quick goal…" aria-label="Add a goal for this week" maxlength="120"></form>
+      <form class="quick-add" data-cadence="this-week">
+        <input type="text" placeholder="＋ quick goal…" aria-label="Add a goal for this week" maxlength="120">
+        <input type="date" class="qa-date" aria-label="Schedule it for a day" title="Schedule for a day (optional)">
+        <select class="qa-cat" aria-label="Category"></select>
+      </form>
     </div>
   </section>
 
@@ -266,6 +274,7 @@
     <button id="fridge-back" class="chip">← Back to the sky</button>
     <h2>The Fridge ✦</h2>
     <span id="fridge-summary" class="fridge-summary"></span>
+    <button id="stock-kitchen" class="chip">＋ stock items</button>
   </div>
   <div class="kitchen">
     <div class="appliance-wrap">
