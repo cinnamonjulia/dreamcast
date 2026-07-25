@@ -10,3 +10,10 @@ DREAMCAST_SPEC.md
 
 # personal files — never publish
 the apartment/
+THE_APARTMENT_SPEC.md
+
+# secrets — if a file like this ever exists, it must not be published
+.env
+.env.*
+*.pem
+*secret*
