@@ -110,7 +110,7 @@ async function pullAndMerge({ quiet = true } = {}) {
       renderAll();
     }
     syncStatus = 'ok';
-    if (!quiet) toast('Dreams synced ✦');
+    if (!quiet) toast('Dreams synced');
   } catch (e) {
     syncStatus = 'error';
     console.warn('Dreamcast sync pull failed', e);
@@ -192,12 +192,23 @@ function renderFilters() {
   $$('#horizon-filter .chip').forEach(c =>
     c.classList.toggle('active', c.dataset.horizon === s.filterHorizon));
 
+  // collapsed "Categories" chip shows the active pick as dot + name
+  const activeCat = state.categories.find(c => c.id === s.filterCategory);
+  const catBtn = $('#cat-filter-btn');
+  setChildren(catBtn,
+    activeCat ? h('span', { class: 'cat-dot', style: `background:${activeCat.color}` }) : null,
+    document.createTextNode(activeCat ? activeCat.name : 'Categories'),
+    h('span', { class: 'chev', text: '▾' }),
+  );
+  catBtn.classList.toggle('active', !!activeCat);
+  const closePopover = () => { const p = $('#category-popover'); p.hidden = true; catBtn.setAttribute('aria-expanded', 'false'); };
+
   const catWrap = $('#category-filter');
   catWrap.replaceChildren(
     h('button', {
       class: 'chip' + (!s.filterCategory ? ' active' : ''),
       text: 'All',
-      onclick: () => { s.filterCategory = null; persist(); renderAll(); },
+      onclick: () => { s.filterCategory = null; closePopover(); persist(); renderAll(); },
     }),
     ...state.categories.map(cat =>
       h('button', {
@@ -205,7 +216,7 @@ function renderFilters() {
         // pale/med/accent/deep tiers derived from the category color (custom picks included)
         style: `--c-pale:${pastelize(cat.color, 0.72)};--c-med:${pastelize(cat.color, 0.52)};`
           + `--c-accent:${readableAccent(cat.color, 0.38)};--c-deep:${readableAccent(cat.color, 0.26)}`,
-        onclick: () => { s.filterCategory = s.filterCategory === cat.id ? null : cat.id; persist(); renderAll(); },
+        onclick: () => { s.filterCategory = s.filterCategory === cat.id ? null : cat.id; closePopover(); persist(); renderAll(); },
       },
         h('span', { class: 'cat-dot', style: `background:${cat.color}` }),
         document.createTextNode(cat.name),
@@ -213,7 +224,7 @@ function renderFilters() {
     ),
   );
 
-  $('#sort-toggle').textContent = s.sort === 'momentum' ? 'Momentum ✦' : 'Manual ↕';
+  $('#sort-toggle').textContent = s.sort === 'momentum' ? 'Momentum' : 'Manual ↕';
 
   // horizon zone dimming
   const hz = s.filterHorizon;
@@ -239,7 +250,7 @@ function renderHorizon() {
       return b;
     }),
     somedays.length ? null :
-      h('span', { class: 'horizon-empty-hint', text: 'The horizon is clear — add a someday dream ✦' }),
+      h('span', { class: 'horizon-empty-hint', text: 'The horizon is clear — add a someday dream' }),
   );
 }
 
@@ -408,7 +419,7 @@ function renderTrayPill(d) {
     d.dueTime ? h('span', { class: 'pill-time', text: formatTime(d.dueTime) }) : null,
     d.scheduledFor && d.scheduledFor > todayISO()
       ? h('span', { class: 'pill-time', text: d.scheduledFor.slice(5).replace('-', '/') }) : null,
-    d.linkedDreamId ? h('span', { class: 'pill-link-glyph', title: 'Feeds a bigger dream', text: '☁️' }) : null,
+    d.linkedDreamId ? h('span', { class: 'pill-link-glyph', title: 'Feeds a bigger dream', html: '<svg viewBox="0 0 20 14" width="15" height="11" style="vertical-align:-1px"><path d="M5.5 12.5 Q2 12.5 2 9.5 Q2 7 4.5 6.5 Q5 3 8.5 3 Q11.5 3 12.5 5.5 Q13 5 14 5 Q17 5 17.5 8 Q18 12.5 14.5 12.5 Z" fill="#FFFFFF" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>' }) : null,
     isGroceryTask(d) ? h('button', {
       class: 'pill-note-btn', title: 'Grocery list', text: '▤',
       onclick: e => {
@@ -467,7 +478,7 @@ function completeQuickGoal(id, pillEl) {
       || d.title.replace(/^(cook|make|bake|meal prep:?|prep)\s*/i, '')
       || 'Home-cooked meal';
     addFoodItem(name, dishFood(), { servings: d.servings || null });
-    toast(`"${name}" landed in the fridge ✦`);
+    toast(`"${name}" landed in the fridge`);
   }
   persist();
 
@@ -629,7 +640,7 @@ function openTaskModal(dreamId, msId, stId) {
   const st = m?.subtasks.find(x => x.id === stId);
   if (!st) return;
   openModal(h('div', {},
-    h('h2', { text: 'Task ✦' }),
+    h('h2', { text: 'Task' }),
     h('p', { style: 'font-size:12px;font-weight:700;color:var(--periwinkle);margin:0 0 10px', text: `In step “${m.text}” of “${d.title}”` }),
     h('div', { class: 'field' },
       h('label', { text: 'Task' }),
@@ -658,7 +669,7 @@ function openTaskModal(dreamId, msId, stId) {
     h('div', { class: 'modal-actions' },
       st.done
         ? h('button', { class: 'btn btn-secondary', text: '↩ Not done after all', onclick: () => { st.done = false; st.doneAt = null; touch(d); persist(); renderAll(); closeModal(); } })
-        : h('button', { class: 'btn btn-primary', text: 'Catch it ✦', onclick: () => { closeModal(); completeSubtask(d.id, m.id, st.id, null); } }),
+        : h('button', { class: 'btn btn-primary', text: 'Catch it', onclick: () => { closeModal(); completeSubtask(d.id, m.id, st.id, null); } }),
       h('button', { class: 'btn btn-secondary', text: 'Open the step', onclick: () => openStepModal(d.id, m.id) }),
       h('button', {
         class: 'btn btn-danger', text: 'Delete',
@@ -761,13 +772,13 @@ function openStepModal(dreamId, msId) {
         }, urlIn, labelIn, h('button', { class: 'btn btn-secondary', type: 'submit', text: '＋' }));
       })(),
       h('div', { class: 'modal-actions' },
-        h('button', { class: 'btn btn-primary', text: 'Catch this step ✦', onclick: () => { closeModal(); catchMilestoneFromSky(d, m); } }),
+        h('button', { class: 'btn btn-primary', text: 'Catch this step', onclick: () => { closeModal(); catchMilestoneFromSky(d, m); } }),
         h('button', { class: 'btn btn-secondary', text: 'Open the dream', onclick: () => { closeModal(); openDreamModal(d.id); } }),
       ),
     );
   };
   render();
-  openModal(h('div', {}, h('h2', { text: 'Dream step ☁' }), body), { slim: true });
+  openModal(h('div', {}, h('h2', { text: 'Dream step' }), body), { slim: true });
 }
 
 function renderCard(d) {
@@ -817,7 +828,7 @@ function renderCard(d) {
     h('div', { class: 'card-next' },
       next
         ? [h('span', { class: 'next-label', style: `color:${sc.accent}`, text: 'Next: ' }), document.createTextNode(next.text)]
-        : h('span', { style: 'opacity:.55', text: d.milestones.length ? 'All dream steps caught ✦' : 'No dream steps yet — add one?' }),
+        : h('span', { style: 'opacity:.8', text: d.milestones.length ? 'All dream steps caught' : 'No dream steps yet — add one?' }),
     ),
     d.links.length ? h('div', { class: 'card-links' },
       ...d.links.slice(0, 3).map(l =>
@@ -1251,7 +1262,7 @@ function openDreamModal(id) {
     ),
     updatesSection,
     h('div', { class: 'modal-actions' },
-      h('button', { class: 'btn btn-primary', text: 'Dream achieved ✦', onclick: () => achieveDream(d.id) }),
+      h('button', { class: 'btn btn-primary', text: 'Dream achieved', onclick: () => achieveDream(d.id) }),
       h('button', {
         class: 'btn btn-secondary', text: d.pinned ? 'Unpin' : 'Pin ★',
         onclick: e => { d.pinned = !d.pinned; touch(d); persist(); e.target.textContent = d.pinned ? 'Unpin' : 'Pin ★'; sounds.tick(); renderAll(); },
@@ -1330,7 +1341,7 @@ function openSomedayModal(id) {
       chaseArea.replaceChildren(
         h('button', {
           class: 'btn btn-primary', style: 'width:100%;padding:12px;font-size:15px;',
-          text: 'Start chasing this dream ✦',
+          text: 'Start chasing this dream',
           onclick: () => renderChase(true),
         }),
       );
@@ -1585,7 +1596,7 @@ function openNewDreamModal() {
   renderFields();
 
   openModal(h('div', {},
-    h('h2', { text: 'Cast a new dream ✦' }),
+    h('h2', { text: 'Cast a new dream' }),
     h('div', { class: 'field' },
       h('label', { text: 'How far away is it?' }),
       radioPills('nd-horizon',
@@ -1596,7 +1607,7 @@ function openNewDreamModal() {
     fieldsArea,
     h('div', { class: 'modal-actions' },
       h('button', {
-        class: 'btn btn-primary', text: 'Cast it ✦',
+        class: 'btn btn-primary', text: 'Cast it',
         onclick: () => {
           const title = draft.title.trim();
           if (!title) { $('#nd-title')?.focus(); return; }
@@ -1661,7 +1672,7 @@ function openCategoriesModal() {
                 return;
               }
               const others = state.categories.filter(c => c.id !== cat.id);
-              if (!others.length) { toast('Keep at least one category ✦'); return; }
+              if (!others.length) { toast('Keep at least one category'); return; }
               const sel = h('select', {}, ...others.map(c => h('option', { value: c.id, text: c.name })));
               row.replaceChildren(
                 h('span', { style: 'font-size:13px;font-weight:700', text: `Move ${used.length} dream${used.length > 1 ? 's' : ''} to:` }),
@@ -1734,7 +1745,7 @@ function openArchivedModal() {
 async function openSyncModal() {
   if (!syncEnabled()) {
     openModal(h('div', {},
-      h('h2', { text: 'Sync devices ✦' }),
+      h('h2', { text: 'Sync devices' }),
       h('p', { style: 'font-size:14px;line-height:1.5', text: 'Cloud sync isn’t set up yet. It takes about five minutes with a free Supabase project — the steps are in the README, or ask Claude to finish the setup once you have your project URL and anon key.' }),
     ), { slim: true });
     return;
@@ -1744,7 +1755,7 @@ async function openSyncModal() {
 
   if (user) {
     openModal(h('div', {},
-      h('h2', { text: 'Sync devices ✦' }),
+      h('h2', { text: 'Sync devices' }),
       h('p', { style: 'font-size:14px' },
         document.createTextNode('Syncing as '),
         h('strong', { text: user.email }),
@@ -1794,7 +1805,7 @@ async function openSyncModal() {
           try {
             await verifyCode(email, codeInput.value.trim());
             closeModal();
-            toast('Signed in ✦ syncing your dreams…');
+            toast('Signed in — syncing your dreams…');
             await pullAndMerge();
             schedulePush();
           } catch (err) {
@@ -1809,7 +1820,7 @@ async function openSyncModal() {
   emailStep();
 
   openModal(h('div', {},
-    h('h2', { text: 'Sync devices ✦' }),
+    h('h2', { text: 'Sync devices' }),
     area,
   ), { slim: true });
 }
@@ -1868,7 +1879,16 @@ function renderPeony() {
     <ellipse cx="${cx - 7}" cy="60" rx="6" ry="2.8" fill="#A5D9A2" transform="rotate(-28 ${cx - 7} 60)"/>
     <ellipse cx="${cx + 7}" cy="64" rx="6" ry="2.8" fill="#A5D9A2" transform="rotate(28 ${cx + 7} 64)"/>`;
   parts += ringDraws.reverse().join(''); // outer rings under, inner rings on top
-  parts += `<circle cx="${cx}" cy="${cy}" r="${count ? 4.5 : 3.5}" fill="#FBE7A2" stroke="#E8CF7E" stroke-width="1.2"/>`;
+  if (count) {
+    parts += `<circle cx="${cx}" cy="${cy}" r="4.5" fill="#FBE7A2" stroke="#E8CF7E" stroke-width="1.2"/>`;
+  } else {
+    // at rest: a closed orchid bud, so the flower reads as a flower before any tasks bloom
+    parts += `
+      <ellipse cx="${cx - 3.6}" cy="${cy + 1}" rx="4.2" ry="7.2" fill="#F5BFF8" stroke="#B343B8" stroke-width="1" transform="rotate(-16 ${cx - 3.6} ${cy + 1})"/>
+      <ellipse cx="${cx + 3.6}" cy="${cy + 1}" rx="4.2" ry="7.2" fill="#F5BFF8" stroke="#B343B8" stroke-width="1" transform="rotate(16 ${cx + 3.6} ${cy + 1})"/>
+      <ellipse cx="${cx}" cy="${cy}" rx="4.4" ry="7.8" fill="#EF96F3" stroke="#B343B8" stroke-width="1.1"/>
+      <path d="M${cx - 4.5} ${cy + 5.5} Q${cx} ${cy + 10.5} ${cx + 4.5} ${cy + 5.5} L${cx} ${cy + 12} Z" fill="#A5D9A2" stroke="#8FBF84" stroke-width="1" stroke-linejoin="round"/>`;
+  }
   svg.setAttribute('viewBox', '0 0 64 72');
   // the flower physically grows with the day's blooms
   const size = 34 + Math.min(count, 100) * 0.22;
@@ -1880,7 +1900,7 @@ function renderPeony() {
   badge.hidden = count === 0;
   badge.textContent = count;
   $('#peony-button').title = count
-    ? `${count} task${count === 1 ? '' : 's'} bloomed today ✿ — click for the task log`
+    ? `${count} task${count === 1 ? '' : 's'} bloomed today — click for the task log`
     : 'Finish tasks to bloom today’s peony — click for the task log';
 }
 
@@ -1913,9 +1933,9 @@ function dropZones(handlers) {
     makeZone('zone-done', hnd => hnd.done?.(),
       h('span', { text: '✓ drop here → done' })),
     makeZone('zone-future', hnd => hnd.future(dateIn.value || tomorrowISO()),
-      h('span', { text: '🗓 drop here → tomorrow, or' }), dateIn),
+      h('span', { html: '<svg viewBox="0 0 20 20" width="14" height="14" style="vertical-align:-2px"><rect x="2.5" y="4" width="15" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 8.5 L17.5 8.5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 2.5 L6.5 5.5 M13.5 2.5 L13.5 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> drop here → tomorrow, or' }), dateIn),
     makeZone('zone-trash', hnd => hnd.trash(),
-      h('span', { text: '🗑 drop here → let it go' })),
+      h('span', { html: '<svg viewBox="0 0 20 20" width="14" height="14" style="vertical-align:-2px"><path d="M5 6.5 L15 6.5 L14 16 Q13.9 17.2 12.7 17.2 L7.3 17.2 Q6.1 17.2 6 16 Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><rect x="4" y="4" width="12" height="2.4" rx="1.2" fill="currentColor"/><path d="M8 4 Q8 2.6 10 2.6 Q12 2.6 12 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg> drop here → let it go' })),
   );
 }
 
@@ -1977,14 +1997,14 @@ function openTasksModal() {
   const refresh = () => { persist(); renderAll(); closeModal(); openTasksModal(); };
   [...upcoming, ...inFlight].forEach(u => handlers.set(u.id, {
     done: () => { closeModal(); u.complete(); toast('Caught it ✦'); },
-    future: v => { u.reschedule(v); refresh(); toast('Sent to the future ✦'); },
-    trash: () => { u.trash(); refresh(); toast('Let it go 🗑'); },
+    future: v => { u.reschedule(v); refresh(); toast('Sent to the future'); },
+    trash: () => { u.trash(); refresh(); toast('Let it go'); },
   }));
   const rowBase = u => ({ class: 'log-row', draggable: 'true', ondragstart: e => e.dataTransfer.setData('text/plain', u.id) });
   const catDot = u => { const c = state.categories.find(x => x.id === u.category); return c ? h('span', { class: 'cat-dot', style: `background:${c.color}`, title: c.name }) : null; };
 
   openModal(h('div', {},
-    h('h2', { text: 'Task log ✦' }),
+    h('h2', { text: 'Task log' }),
     h('p', { style: 'font-size:13px;opacity:.7', text: 'Drag any task onto a zone below — catch it done, send it to tomorrow (or any date), or let it go.' }),
     dropZones(handlers),
     h('h3', { text: 'Yesterday\'s Tasks (and others still in flight)' }),
@@ -2003,20 +2023,20 @@ function openTasksModal() {
         }),
         h('button', {
           class: 'btn btn-secondary log-restore', text: '→ tomorrow', title: 'Move it to tomorrow',
-          onclick: () => { u.reschedule(tomorrowISO()); refresh(); toast('See you tomorrow ✦'); },
+          onclick: () => { u.reschedule(tomorrowISO()); refresh(); toast('See you tomorrow'); },
         }),
         h('button', {
-          class: 'btn btn-secondary log-restore', text: '🗑', title: 'Let it go',
-          onclick: () => { u.trash(); refresh(); toast('Let it go 🗑'); },
+          class: 'btn btn-secondary log-restore', html: '<svg viewBox="0 0 20 20" width="14" height="14" style="vertical-align:-2px"><path d="M5 6.5 L15 6.5 L14 16 Q13.9 17.2 12.7 17.2 L7.3 17.2 Q6.1 17.2 6 16 Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><rect x="4" y="4" width="12" height="2.4" rx="1.2" fill="currentColor"/><path d="M8 4 Q8 2.6 10 2.6 Q12 2.6 12 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>', title: 'Let it go',
+          onclick: () => { u.trash(); refresh(); toast('Let it go'); },
         }),
       )))
-      : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'Nothing waiting — the trays are all caught up ✦' }),
+      : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'Nothing waiting — the trays are all caught up' }),
     h('h3', { text: 'Scheduled ahead — click a date to move it' }),
     upcoming.length ? h('ul', { class: 'updates-list log-list' },
       ...upcoming.slice(0, 40).map(u => h('li', rowBase(u),
         h('input', {
           type: 'date', class: 'log-date', value: u.date, 'aria-label': `Reschedule ${u.text}`,
-          onchange: e => { u.reschedule(e.target.value); persist(); renderAll(); toast('Rescheduled ✦'); },
+          onchange: e => { u.reschedule(e.target.value); persist(); renderAll(); toast('Rescheduled'); },
         }),
         h('span', { class: 'scope-glyph', text: scopeGlyph(u.scope) }),
         catDot(u),
@@ -2028,11 +2048,11 @@ function openTasksModal() {
         }),
         h('button', {
           class: 'btn btn-secondary log-restore', text: '→ today', title: 'Move into the Today tray',
-          onclick: () => { u.moveToday(); refresh(); toast('Moved to today ✦'); },
+          onclick: () => { u.moveToday(); refresh(); toast('Moved to today'); },
         }),
         h('button', {
           class: 'btn btn-secondary log-restore', text: '→ this week', title: 'Move into the This Week tray',
-          onclick: () => { u.moveWeek(); refresh(); toast('Moved to this week ✦'); },
+          onclick: () => { u.moveWeek(); refresh(); toast('Moved to this week'); },
         }),
       )))
       : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'Nothing scheduled yet — date a task in the tray or a subtask inside a dream.' }),
@@ -2044,7 +2064,7 @@ function openTasksModal() {
         u.dream ? h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }) : null,
         h('button', {
           class: 'btn btn-secondary log-restore', text: '↩ bring back',
-          onclick: () => { u.restore(); persist(); renderAll(); closeModal(); openTasksModal(); toast('Back in the tray ✦'); },
+          onclick: () => { u.restore(); persist(); renderAll(); closeModal(); openTasksModal(); toast('Back in the tray'); },
         }),
       )))
       : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'No tasks caught yet — today is a fine day to start.' }),
@@ -2085,7 +2105,7 @@ function addFoodItem(name, info, extra = {}) {
 
 function stockFridge(names) {
   names.forEach(n => addFoodItem(n, matchFood(n)));
-  toast(`Fridge stocked ✦ ${names.length} item${names.length === 1 ? '' : 's'} put away`);
+  toast(`Fridge stocked — ${names.length} item${names.length === 1 ? '' : 's'} put away`);
   if (!$('#fridge-view').hidden) renderFridge();
 }
 
@@ -2200,20 +2220,20 @@ function openStockModal() {
       const names = txt.split(/[\n,;]+/)
         .map(x => x.replace(/^["']|["']$/g, '').trim())
         .filter(x => x && !/^(items?|name|groceries)$/i.test(x)); // skip a CSV header row
-      if (!names.length) { toast('That file looked empty — try a plain list ✦'); return; }
+      if (!names.length) { toast('That file looked empty — try a plain list'); return; }
       ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + names.join('\n');
     });
     file.value = '';
   });
   openModal(h('div', {},
-    h('h2', { text: 'Stock the kitchen ✦' }),
+    h('h2', { text: 'Stock the kitchen' }),
     h('p', { style: 'font-size:13px;opacity:.75', text: 'Write down everything in your fridge and pantry — or upload a list — and each item lands on the right shelf with an estimated shelf life.' }),
     h('div', { class: 'field' }, ta),
     file,
     h('div', { class: 'modal-actions' },
-      h('button', { class: 'btn', text: '📄 upload a list (.txt / .csv)', onclick: () => file.click() }),
+      h('button', { class: 'btn', html: '<svg viewBox="0 0 20 20" width="14" height="14" style="vertical-align:-2px"><path d="M5 2.5 L12 2.5 L15.5 6 L15.5 17.5 L5 17.5 Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 2.5 L12 6 L15.5 6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 10 L13 10 M7.5 13 L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> upload a list (.txt / .csv)', onclick: () => file.click() }),
       h('button', {
-        class: 'btn btn-primary', text: 'Put it all away ✦',
+        class: 'btn btn-primary', text: 'Put it all away',
         onclick: () => {
           const names = ta.value.split('\n').map(x => x.trim()).filter(Boolean);
           if (!names.length) return;
@@ -2229,7 +2249,7 @@ function openStockModal() {
 function openStaplesModal() {
   const have = new Set(state.fridge.staples);
   openModal(h('div', {},
-    h('h2', { text: 'Staples I always have 🧂' }),
+    h('h2', { text: 'Staples I always have' }),
     h('p', { style: 'font-size:13px;opacity:.75', text: 'Tick the basics living in your pantry — salt, oil, spices. Recipe ideas will assume these are covered and never nag you to buy them.' }),
     h('div', { class: 'staples-grid' },
       ...STAPLES.map(s =>
@@ -2266,7 +2286,7 @@ function openRecipeIdeasModal() {
     return h('div', { class: 'idea-card' + (r.ready ? ' ready' : '') },
       h('div', { class: 'idea-head' },
         h('span', { class: 'idea-name', text: `${r.emoji} ${r.name}` }),
-        h('span', { class: 'idea-badge', text: r.ready ? 'ready to cook ✦' : `missing ${r.missing.length}` }),
+        h('span', { class: 'idea-badge', text: r.ready ? 'ready to cook' : `missing ${r.missing.length}` }),
       ),
       h('p', { class: 'idea-have', text: `uses: ${r.have.join(', ')}` }),
       r.missing.length ? h('p', { class: 'idea-missing', text: `missing: ${r.missing.join(', ')}` }) : null,
@@ -2285,7 +2305,7 @@ function openRecipeIdeasModal() {
           persist();
           closeModal();
           renderAll();
-          toast(`Shopping list for ${r.name} is in your Today tray ✦`);
+          toast(`Shopping list for ${r.name} is in your Today tray`);
         },
       }) : null,
     );
@@ -2296,9 +2316,9 @@ function openRecipeIdeasModal() {
     h('p', { style: 'font-size:13px;opacity:.75', text: 'Ideas matched to what’s on your shelves right now. Tick your staples first so it knows what you already have.' }),
     h('div', { class: 'idea-list' }, ...ideas.slice(0, 8).map(ideaCard)),
     h('div', { class: 'modal-actions' },
-      h('button', { class: 'btn', text: '🧂 my staples', onclick: () => { closeModal(); openStaplesModal(); } }),
+      h('button', { class: 'btn', text: 'my staples', onclick: () => { closeModal(); openStaplesModal(); } }),
       searchNames.length ? h('button', {
-        class: 'btn btn-primary', text: 'find more recipes online ✦',
+        class: 'btn btn-primary', text: 'find more recipes online',
         onclick: () => window.open(
           'https://www.google.com/search?q=' + encodeURIComponent(`easy recipe with ${searchNames.join(' ')}`),
           '_blank', 'noopener'),
@@ -2326,7 +2346,7 @@ function openRecipeModal() {
     if (name && !dish.value) dish.placeholder = name;
   });
   openModal(h('div', {},
-    h('h2', { text: 'Recipe → grocery list ✦' }),
+    h('h2', { text: 'Recipe → grocery list' }),
     h('p', { style: 'font-size:13px;opacity:.75', text: 'Paste a recipe and the ingredients become a shopping list in your Today tray. Finishing the grocery run stocks the fridge — and completing it drops the cooked dish in too.' }),
     h('div', { class: 'field' }, h('label', { text: 'Recipe link (optional)' }), link),
     h('div', { class: 'field' }, h('label', { text: 'Recipe' }), ta),
@@ -2334,10 +2354,10 @@ function openRecipeModal() {
     h('div', { class: 'field' }, h('label', { text: 'Dish name (what shows in the fridge)' }), dish),
     h('div', { class: 'modal-actions' },
       h('button', {
-        class: 'btn btn-primary', text: 'Make my list ✦',
+        class: 'btn btn-primary', text: 'Make my list',
         onclick: () => {
           const groceries = listTa.value.split('\n').map(x => x.trim()).filter(Boolean);
-          if (!groceries.length) { toast('Paste a recipe first — no ingredients found yet ✦'); return; }
+          if (!groceries.length) { toast('Paste a recipe first — no ingredients found yet'); return; }
           const dishName = dish.value.trim() || urlToDishName(link.value.trim()) || null;
           const dream = makeDream({
             title: `Grocery run — ${dishName || 'new recipe'}`,
@@ -2351,7 +2371,7 @@ function openRecipeModal() {
           persist();
           closeModal();
           renderAll();
-          toast(`Shopping list ready — ${groceries.length} ingredient${groceries.length === 1 ? '' : 's'} ✦`);
+          toast(`Shopping list ready — ${groceries.length} ingredient${groceries.length === 1 ? '' : 's'}`);
           openGroceryNote(dream.id);
         },
       }),
@@ -2368,11 +2388,11 @@ function removeFoodItem(id) {
 
 function clearExpired() {
   const expired = state.fridge.items.filter(isExpired);
-  if (!expired.length) { toast('Nothing expired — the fridge is fresh ✦'); return; }
+  if (!expired.length) { toast('Nothing expired — the fridge is fresh'); return; }
   state.fridge.items = state.fridge.items.filter(i => !isExpired(i));
   persist();
   renderFridge();
-  toast(`Tossed ${expired.length} expired item${expired.length === 1 ? '' : 's'} 🗑`);
+  toast(`Tossed ${expired.length} expired item${expired.length === 1 ? '' : 's'}`);
 }
 
 function showFridge() {
@@ -2568,8 +2588,8 @@ function catchRoomPeace(dream, m, roomEl) {
   const allRooms = state.apartment.rooms.every(r => dream.milestones.find(x => x.id === r.stepId)?.done);
   if (allRooms) {
     confettiBurst(['#96D9F6', '#52C3F4', '#FFFFFF', '#E556EC']);
-    toast('Your home is at peace ☮ — catch this dream?', {
-      linkText: 'Catch it ✦', onLink: () => achieveDream(dream.id), duration: 9000,
+    toast('Your home is at peace — catch this dream?', {
+      linkText: 'Catch it', onLink: () => achieveDream(dream.id), duration: 9000,
     });
   }
 }
@@ -2640,7 +2660,7 @@ function renderRoomPanel() {
         h('button', { class: 'rp-task-text', text: st.text, title: 'Edit this task', onclick: () => openTaskModal(dream.id, m.id, st.id) }),
         st.scheduledFor ? h('span', { class: 'pill-time', text: st.scheduledFor.slice(5).replace('-', '/') }) : null,
       ))) :
-      h('p', { class: 'rp-empty', text: 'Nothing to tidy here yet — add the little things below ✦' }),
+      h('p', { class: 'rp-empty', text: 'Nothing to tidy here yet — add the little things below' }),
     h('form', {
       class: 'rp-add',
       onsubmit: e => {
@@ -2662,10 +2682,10 @@ function renderRoomPanel() {
         : h('button', {
             class: 'btn btn-peace', text: 'room at peace ☮',
             disabled: allDone ? null : 'disabled',
-            title: allDone ? 'Catch this room for the dream' : 'finish the little tasks first ✦',
+            title: allDone ? 'Catch this room for the dream' : 'finish the little tasks first',
             onclick: () => catchRoomPeace(dream, m, roomBtn),
           }),
-      h('button', { class: 'btn btn-secondary', text: 'open in dream ✦', onclick: () => openStepModal(dream.id, m.id) }),
+      h('button', { class: 'btn btn-secondary', text: 'open in dream', onclick: () => openStepModal(dream.id, m.id) }),
       r.key === 'kitchen' ? h('button', {
         class: 'btn btn-secondary', text: 'open the fridge →',
         onclick: () => {
@@ -2766,8 +2786,8 @@ function renderGallery() {
       ms ? `${ms} dream step${ms === 1 ? '' : 's'}` : null,
     ].filter(Boolean).join(' and ');
     empty.querySelector('p').textContent = bits
-      ? `No whole dreams caught yet — but your jar is glowing with ${bits}. Achieve a dream and it lands here as a big orb. ✦`
-      : 'No dreams caught yet — but the sky is full of them. ✦';
+      ? `No whole dreams caught yet — but your jar is glowing with ${bits}. Achieve a dream and it lands here as a big orb.`
+      : 'No dreams caught yet — but the sky is full of them.';
   }
   shelf.replaceChildren(
     ...achieved.map(d => {
@@ -2891,7 +2911,7 @@ function openRolloverModal(items) {
   listArea.replaceChildren(...items.map(rowFor));
 
   openModal(h('div', {},
-    h('h2', { text: 'Still chasing these? ☁️' }),
+    h('h2', { text: 'Still chasing these?' }),
     h('p', { style: 'font-size:13.5px;opacity:.75', text: 'No pressure — dreams keep. Choose for each, or drag a task onto a zone below.' }),
     dropZones(handlers),
     listArea,
@@ -2958,10 +2978,24 @@ function wireHeader() {
   document.addEventListener('click', e => {
     if (!menu.hidden && !menu.contains(e.target)) menu.hidden = true;
   });
+
+  // category filter popover (same open/close pattern as the settings menu)
+  const catPop = $('#category-popover');
+  $('#cat-filter-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    catPop.hidden = !catPop.hidden;
+    $('#cat-filter-btn').setAttribute('aria-expanded', String(!catPop.hidden));
+  });
+  document.addEventListener('click', e => {
+    if (!catPop.hidden && !catPop.contains(e.target)) {
+      catPop.hidden = true;
+      $('#cat-filter-btn').setAttribute('aria-expanded', 'false');
+    }
+  });
   $('#menu-categories').addEventListener('click', () => { menu.hidden = true; openCategoriesModal(); });
   $('#menu-sync').addEventListener('click', () => { menu.hidden = true; openSyncModal(); });
   $('#menu-archived').addEventListener('click', () => { menu.hidden = true; openArchivedModal(); });
-  $('#menu-export').addEventListener('click', () => { menu.hidden = true; exportState(state); toast('Backup downloaded — keep it somewhere cozy. ✦'); });
+  $('#menu-export').addEventListener('click', () => { menu.hidden = true; exportState(state); toast('Backup downloaded — keep it somewhere cozy.'); });
   $('#menu-import').addEventListener('click', () => { menu.hidden = true; $('#import-file').click(); });
   $('#import-file').addEventListener('change', async e => {
     const file = e.target.files[0];
@@ -2973,7 +3007,7 @@ function wireHeader() {
       persist();
       floatCache.clear();
       renderAll();
-      toast('Dreams restored ✦ Welcome back.');
+      toast('Dreams restored Welcome back.');
     } catch {
       toast('That file doesn’t look like a Dreamcast backup.');
     }
@@ -3004,6 +3038,30 @@ function wireQuickAdd() {
     const dateInput = form.querySelector('.qa-date');
     const catSel = form.querySelector('.qa-cat');
     const scopeSel = form.querySelector('.qa-scope');
+
+    // the date lives behind a calendar button; a chosen day shows as a tiny pill
+    const when = form.querySelector('.qa-when');
+    const datePill = form.querySelector('.qa-date-pill');
+    const syncDatePill = () => {
+      if (!datePill) return;
+      const v = dateInput?.value;
+      datePill.hidden = !v;
+      if (v) {
+        const d = new Date(v + 'T12:00');
+        datePill.querySelector('.qa-date-text').textContent =
+          d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      }
+    };
+    form.querySelector('.qa-date-btn')?.addEventListener('click', () => {
+      try { dateInput.showPicker(); }
+      catch { when.classList.add('native-fallback'); dateInput.focus(); }
+    });
+    form.querySelector('.qa-date-clear')?.addEventListener('click', () => {
+      dateInput.value = '';
+      syncDatePill();
+    });
+    dateInput?.addEventListener('change', syncDatePill);
+
     form.addEventListener('submit', e => {
       e.preventDefault();
       const title = input.value.trim();
@@ -3023,6 +3081,7 @@ function wireQuickAdd() {
       persist(); renderAll(); sounds.tick();
       input.value = '';
       if (dateInput) dateInput.value = '';
+      syncDatePill();
       input.focus();
     });
   });
@@ -3100,7 +3159,7 @@ function init() {
       pullAndMerge().then(() => schedulePush());
       if (!syncAnnounced) {
         syncAnnounced = true;
-        toast(`Synced ✦ signed in as ${user.email}`);
+        toast(`Synced — signed in as ${user.email}`);
       }
     };
     currentUser().then(u => { if (u) onSignedIn(u); else syncStatus = 'signed-out'; });

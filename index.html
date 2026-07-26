@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://esm.sh https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
-<title>Dreamcast ✦</title>
+<title>Dreamcast</title>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="%23E556EC"/><stop offset="1" stop-color="%2352C3F4"/></linearGradient></defs><path d="M10 1 L12 8 L19 10 L12 12 L10 19 L8 12 L1 10 L8 8 Z" fill="url(%23g)"/></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
@@ -57,15 +58,18 @@
         <button class="chip" data-horizon="long">Long</button>
         <button class="chip" data-horizon="someday">Someday</button>
       </div>
-    </div>
-    <div class="filter-row">
-      <div class="chip-group" id="category-filter" role="group" aria-label="Category filter"></div>
-      <button class="chip sort-toggle" id="sort-toggle" title="Toggle sort mode">Momentum ✦</button>
+      <div class="settings-wrap cat-filter-wrap">
+        <button id="cat-filter-btn" class="chip" aria-haspopup="true" aria-expanded="false">Categories <span class="chev">▾</span></button>
+        <div id="category-popover" class="settings-menu cat-popover" hidden>
+          <div class="chip-group" id="category-filter" role="group" aria-label="Category filter"></div>
+        </div>
+      </div>
+      <button class="chip sort-toggle" id="sort-toggle" title="Toggle sort mode">Momentum</button>
     </div>
   </div>
 
   <div class="header-right">
-    <a href="#" id="gallery-link" class="gallery-link">Caught dreams ✦ <span id="gallery-count">0</span></a>
+    <a href="#" id="gallery-link" class="gallery-link">Caught dreams ✦&nbsp;<span id="gallery-count">0</span></a>
 
     <button id="peony-button" class="jar-button" aria-label="Weekly task peony — open the task log">
       <svg id="peony-svg" viewBox="0 0 44 52" width="34" height="40" aria-hidden="true"></svg>
@@ -134,7 +138,7 @@
       </button>
       <div id="settings-menu" class="settings-menu" hidden>
         <button id="menu-categories">Categories…</button>
-        <button id="menu-sync">Sync devices ✦</button>
+        <button id="menu-sync">Sync devices</button>
         <button id="menu-export">Export my dreams</button>
         <button id="menu-import">Import…</button>
         <button id="menu-archived">Archived dreams</button>
@@ -155,13 +159,19 @@
 
   <!-- ======================= TODAY & THIS WEEK TRAY ======================= -->
   <section id="tray" aria-label="Short-term goals">
-    <button id="tasks-log" class="chip tasks-log-btn">Task log ✦</button>
+    <button id="tasks-log" class="chip tasks-log-btn">Task log</button>
     <div class="tray-group" data-cadence="today">
       <div class="tray-group-head"><h2>Today</h2><span class="caught-count" id="caught-today"></span></div>
       <ul class="tray-list" id="tray-today"></ul>
       <form class="quick-add" data-cadence="today">
         <input type="text" placeholder="＋ quick goal…" aria-label="Add a goal for today" maxlength="120">
-        <input type="date" class="qa-date" aria-label="Schedule it for a day" title="Schedule for a day (optional)">
+        <span class="qa-when">
+          <button type="button" class="qa-date-btn" aria-label="Schedule it for a day" title="Schedule for a day (optional)">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><rect x="2.5" y="4" width="15" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 8.5 L17.5 8.5" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 2.5 L6.5 5.5 M13.5 2.5 L13.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="7" cy="12" r="1.1" fill="currentColor"/><circle cx="11" cy="12" r="1.1" fill="currentColor"/><circle cx="15" cy="12" r="1.1" fill="currentColor" opacity=".45"/></svg>
+          </button>
+          <input type="date" class="qa-date qa-date-hidden" aria-hidden="true" tabindex="-1">
+          <span class="qa-date-pill" hidden><span class="qa-date-text"></span><button type="button" class="qa-date-clear" aria-label="Clear scheduled date">×</button></span>
+        </span>
         <select class="qa-scope" aria-label="Which P" title="Which P?"></select>
         <select class="qa-cat" aria-label="Category"></select>
       </form>
@@ -172,7 +182,13 @@
       <ul class="tray-list" id="tray-week"></ul>
       <form class="quick-add" data-cadence="this-week">
         <input type="text" placeholder="＋ quick goal…" aria-label="Add a goal for this week" maxlength="120">
-        <input type="date" class="qa-date" aria-label="Schedule it for a day" title="Schedule for a day (optional)">
+        <span class="qa-when">
+          <button type="button" class="qa-date-btn" aria-label="Schedule it for a day" title="Schedule for a day (optional)">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><rect x="2.5" y="4" width="15" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 8.5 L17.5 8.5" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 2.5 L6.5 5.5 M13.5 2.5 L13.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="7" cy="12" r="1.1" fill="currentColor"/><circle cx="11" cy="12" r="1.1" fill="currentColor"/><circle cx="15" cy="12" r="1.1" fill="currentColor" opacity=".45"/></svg>
+          </button>
+          <input type="date" class="qa-date qa-date-hidden" aria-hidden="true" tabindex="-1">
+          <span class="qa-date-pill" hidden><span class="qa-date-text"></span><button type="button" class="qa-date-clear" aria-label="Clear scheduled date">×</button></span>
+        </span>
         <select class="qa-scope" aria-label="Which P" title="Which P?"></select>
         <select class="qa-cat" aria-label="Category"></select>
       </form>
@@ -258,7 +274,7 @@
 
   <!-- ======================= RECENTLY TOUCHED ======================= -->
   <section id="recent-strip" aria-label="Recently touched dreams">
-    <span class="recent-label">Recently touched ✦</span>
+    <span class="recent-label">Recently touched</span>
     <div id="recent-chips"></div>
   </section>
 </main>
@@ -328,12 +344,12 @@
 <section id="fridge-view" hidden>
   <div class="gallery-head">
     <button id="fridge-back" class="chip">← Back to the sky</button>
-    <h2>The Fridge ✦</h2>
+    <h2>The Fridge</h2>
     <span id="fridge-summary" class="fridge-summary"></span>
     <button id="stock-kitchen" class="chip">＋ stock items</button>
-    <button id="staples-btn" class="chip">🧂 staples</button>
-    <button id="recipe-ideas" class="chip">✨ what can I cook?</button>
-    <button id="recipe-list" class="chip">🍲 recipe → grocery list</button>
+    <button id="staples-btn" class="chip"><svg class="chip-ico" viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M7 8 L13 8 L14 16 Q14 17.5 12.5 17.5 L7.5 17.5 Q6 17.5 6 16 Z" fill="#E2EFF2" stroke="#2B2440" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 4.5 Q7.5 2.5 10 2.5 Q12.5 2.5 12.5 4.5 L12.8 8 L7.2 8 Z" fill="#B1D4DC" stroke="#2B2440" stroke-width="1.5" stroke-linejoin="round"/><circle cx="9" cy="4.8" r=".7" fill="#2B2440"/><circle cx="11" cy="4.8" r=".7" fill="#2B2440"/><circle cx="10" cy="6.2" r=".7" fill="#2B2440"/></svg> staples</button>
+    <button id="recipe-ideas" class="chip"><svg class="chip-ico" viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M3.5 9.5 L16.5 9.5 L15.5 15 Q15.2 16.8 13.5 16.8 L6.5 16.8 Q4.8 16.8 4.5 15 Z" fill="#F6E9FE" stroke="#2B2440" stroke-width="1.5" stroke-linejoin="round"/><path d="M16.5 10.5 L18.5 9" fill="none" stroke="#2B2440" stroke-width="1.5" stroke-linecap="round"/><path d="M10 2.2 L10.8 4.4 L13 5.2 L10.8 6 L10 8.2 L9.2 6 L7 5.2 L9.2 4.4 Z" fill="#C265F8" stroke="#2B2440" stroke-width="1.1" stroke-linejoin="round"/><path d="M5.2 6.7 L5.6 7.8 L6.7 8.2 L5.6 8.6 L5.2 9.7 L4.8 8.6 L3.7 8.2 L4.8 7.8 Z" fill="#D9A0FB"/></svg> what can I cook?</button>
+    <button id="recipe-list" class="chip"><svg class="chip-ico" viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M3 9 Q3 8 4 8 L16 8 Q17 8 17 9 Q17 13.5 13.8 15.4 L14 16.5 Q14 17.3 13 17.3 L7 17.3 Q6 17.3 6.2 16.5 L6.4 15.4 Q3 13.5 3 9 Z" fill="#EFF9FE" stroke="#2B2440" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 5.8 Q6.4 4.6 7.2 3.6 M10.2 5.8 Q9.6 4.6 10.4 3.6 M13.4 5.8 Q12.8 4.6 13.6 3.6" fill="none" stroke="#96D9F6" stroke-width="1.5" stroke-linecap="round"/></svg> recipe → grocery list</button>
   </div>
   <div class="kitchen">
     <div class="appliance-wrap">
@@ -345,8 +361,8 @@
         </div>
         <div class="fridge-door" id="fridge-door">
           <div class="door-handle"></div>
-          <div class="door-magnet m1">✦</div>
-          <div class="door-magnet m2">✿</div>
+          <div class="door-magnet m1">♡</div>
+          <div class="door-magnet m2">☾</div>
           <div class="door-note">dream big,<br>eat well ♡</div>
         </div>
       </div>
@@ -381,11 +397,11 @@
 <section id="gallery-view" hidden>
   <div class="gallery-head">
     <button id="gallery-back" class="chip">← Back to the sky</button>
-    <h2>Caught Dreams ✦</h2>
+    <h2>Caught Dreams</h2>
   </div>
   <div id="gallery-shelf"></div>
   <div id="gallery-empty" class="empty-state" hidden>
-    <p>No dreams caught yet — but the sky is full of them. ✦</p>
+    <p>No dreams caught yet — but the sky is full of them.</p>
   </div>
 </section>
 
