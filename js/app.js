@@ -327,6 +327,14 @@ function renderSubtaskPill({ dream, ms, st, overdue }) {
   const pill = h('li', {
     class: `tray-pill pill-subtask pill-${dream.scope}` + (overdue ? ' overdue' : ''),
     'data-id': st.id,
+    draggable: 'true',
+    ondragstart: e => {
+      draggingTrayId = st.id;
+      e.dataTransfer.setData('text/plain', st.id);
+      e.dataTransfer.effectAllowed = 'move';
+      pill.classList.add('dragging');
+    },
+    ondragend: () => { draggingTrayId = null; pill.classList.remove('dragging'); clearTrayDragOver(); },
   },
     h('button', {
       class: 'tray-check',
@@ -397,6 +405,14 @@ function renderTrayPill(d) {
       + (d.importance === 'high' ? ' imp-high' : d.importance === 'low' ? ' imp-low' : '')
       + (isOverdue(d) ? ' overdue' : ''),
     'data-id': d.id,
+    draggable: 'true',
+    ondragstart: e => {
+      draggingTrayId = d.id;
+      e.dataTransfer.setData('text/plain', d.id);
+      e.dataTransfer.effectAllowed = 'move';
+      pill.classList.add('dragging');
+    },
+    ondragend: () => { draggingTrayId = null; pill.classList.remove('dragging'); clearTrayDragOver(); },
   },
     h('button', {
       class: 'tray-check',
@@ -434,6 +450,67 @@ function renderTrayPill(d) {
 
 function isGroceryTask(d) {
   return /grocer|market|food ?shop/i.test(d.title) || (d.groceries?.length > 0);
+}
+
+/* ---------- drag a pill straight across the divider: Today ⇄ This Week ---------- */
+
+let draggingTrayId = null; // set while a tray pill is mid-flight, so only pills light the trays up
+
+function clearTrayDragOver() {
+  $$('#tray .tray-group.drag-over').forEach(g => g.classList.remove('drag-over'));
+}
+
+function wireTrayDrag() {
+  $$('#tray .tray-group').forEach(group => {
+    group.addEventListener('dragover', e => {
+      if (!draggingTrayId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      group.classList.add('drag-over');
+    });
+    group.addEventListener('dragleave', e => {
+      if (!group.contains(e.relatedTarget)) group.classList.remove('drag-over');
+    });
+    group.addEventListener('drop', e => {
+      if (!draggingTrayId) return;
+      e.preventDefault();
+      clearTrayDragOver();
+      moveTrayTask(e.dataTransfer.getData('text/plain'), group.dataset.cadence);
+    });
+  });
+}
+
+function moveTrayTask(id, target) {
+  if (!id || !target) return;
+  const today = todayISO();
+  const settle = d => { touch(d); persist(); sounds.tick(); renderAll(); toast(target === 'today' ? 'Pulled into today' : 'Moved to this week'); };
+
+  // quick goal: swap its cadence (and forget any ahead-schedule that parked it in the week tray)
+  const goal = state.dreams.find(x => x.id === id && x.horizon === 'short' && x.status === 'active');
+  if (goal) {
+    const current = goal.scheduledFor && goal.scheduledFor > today ? 'this-week' : goal.cadence;
+    if (current === target) return;
+    goal.cadence = target;
+    goal.scheduledFor = null;
+    settle(goal);
+    return;
+  }
+
+  // dream step: its tray home is derived from scheduledFor, so move the date instead
+  for (const d of state.dreams) {
+    if (d.status !== 'active') continue;
+    for (const m of d.milestones) {
+      const st = (m.subtasks || []).find(x => x.id === id && !x.done);
+      if (!st) continue;
+      const tmr = tomorrowISO();
+      const next = target === 'today' ? today
+        : weekKey(new Date(tmr + 'T12:00')) === weekKey() ? tmr : today;
+      if (st.scheduledFor === next) return;
+      st.scheduledFor = next;
+      settle(d);
+      return;
+    }
+  }
 }
 
 /* recipe URLs almost always carry the dish name in their slug — mine it */
@@ -2015,20 +2092,24 @@ function openTasksModal() {
           : h('span', { class: 'where-badge', text: u.where }),
         h('span', { class: 'scope-glyph', text: scopeGlyph(u.scope) }),
         catDot(u),
-        h('a', { href: '#', text: u.text, onclick: e => { e.preventDefault(); closeModal(); u.open(); } }),
-        u.dream ? h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }) : null,
-        h('button', {
-          class: 'btn btn-secondary log-restore', text: '✓ done', title: 'Mark it complete',
-          onclick: () => { closeModal(); u.complete(); toast('Caught it ✦'); },
-        }),
-        h('button', {
-          class: 'btn btn-secondary log-restore', text: '→ tomorrow', title: 'Move it to tomorrow',
-          onclick: () => { u.reschedule(tomorrowISO()); refresh(); toast('See you tomorrow'); },
-        }),
-        h('button', {
-          class: 'btn btn-secondary log-restore', html: '<svg viewBox="0 0 20 20" width="14" height="14" style="vertical-align:-2px"><path d="M5 6.5 L15 6.5 L14 16 Q13.9 17.2 12.7 17.2 L7.3 17.2 Q6.1 17.2 6 16 Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><rect x="4" y="4" width="12" height="2.4" rx="1.2" fill="currentColor"/><path d="M8 4 Q8 2.6 10 2.6 Q12 2.6 12 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>', title: 'Let it go',
-          onclick: () => { u.trash(); refresh(); toast('Let it go'); },
-        }),
+        h('span', { class: 'log-text' },
+          h('a', { href: '#', text: u.text, onclick: e => { e.preventDefault(); closeModal(); u.open(); } }),
+          u.dream ? h('span', { class: 'log-dream', text: ` — ${u.dream}` }) : null,
+        ),
+        h('span', { class: 'log-actions' },
+          h('button', {
+            class: 'btn btn-secondary log-restore', text: '✓ done', title: 'Mark it complete',
+            onclick: () => { closeModal(); u.complete(); toast('Caught it ✦'); },
+          }),
+          h('button', {
+            class: 'btn btn-secondary log-restore', text: '→ tomorrow', title: 'Move it to tomorrow',
+            onclick: () => { u.reschedule(tomorrowISO()); refresh(); toast('See you tomorrow'); },
+          }),
+          h('button', {
+            class: 'btn btn-secondary log-restore', html: '<svg viewBox="0 0 20 20" width="14" height="14" style="vertical-align:-2px"><path d="M5 6.5 L15 6.5 L14 16 Q13.9 17.2 12.7 17.2 L7.3 17.2 Q6.1 17.2 6 16 Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><rect x="4" y="4" width="12" height="2.4" rx="1.2" fill="currentColor"/><path d="M8 4 Q8 2.6 10 2.6 Q12 2.6 12 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>', title: 'Let it go',
+            onclick: () => { u.trash(); refresh(); toast('Let it go'); },
+          }),
+        ),
       )))
       : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'Nothing waiting — the trays are all caught up' }),
     h('h3', { text: 'Scheduled ahead — click a date to move it' }),
@@ -2040,32 +2121,40 @@ function openTasksModal() {
         }),
         h('span', { class: 'scope-glyph', text: scopeGlyph(u.scope) }),
         catDot(u),
-        h('a', { href: '#', text: u.text, onclick: e => { e.preventDefault(); closeModal(); u.open(); } }),
-        u.dream ? h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }) : null,
-        h('button', {
-          class: 'btn btn-secondary log-restore', text: '✓ done', title: 'Mark it complete',
-          onclick: () => { closeModal(); u.complete(); toast('Caught it ✦'); },
-        }),
-        h('button', {
-          class: 'btn btn-secondary log-restore', text: '→ today', title: 'Move into the Today tray',
-          onclick: () => { u.moveToday(); refresh(); toast('Moved to today'); },
-        }),
-        h('button', {
-          class: 'btn btn-secondary log-restore', text: '→ this week', title: 'Move into the This Week tray',
-          onclick: () => { u.moveWeek(); refresh(); toast('Moved to this week'); },
-        }),
+        h('span', { class: 'log-text' },
+          h('a', { href: '#', text: u.text, onclick: e => { e.preventDefault(); closeModal(); u.open(); } }),
+          u.dream ? h('span', { class: 'log-dream', text: ` — ${u.dream}` }) : null,
+        ),
+        h('span', { class: 'log-actions' },
+          h('button', {
+            class: 'btn btn-secondary log-restore', text: '✓ done', title: 'Mark it complete',
+            onclick: () => { closeModal(); u.complete(); toast('Caught it ✦'); },
+          }),
+          h('button', {
+            class: 'btn btn-secondary log-restore', text: '→ today', title: 'Move into the Today tray',
+            onclick: () => { u.moveToday(); refresh(); toast('Moved to today'); },
+          }),
+          h('button', {
+            class: 'btn btn-secondary log-restore', text: '→ this week', title: 'Move into the This Week tray',
+            onclick: () => { u.moveWeek(); refresh(); toast('Moved to this week'); },
+          }),
+        ),
       )))
       : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'Nothing scheduled yet — date a task in the tray or a subtask inside a dream.' }),
     h('h3', { text: 'Caught in the past — bring one back if it needs another round' }),
     past.length ? h('ul', { class: 'updates-list log-list' },
       ...past.slice(0, 60).map(u => h('li', { class: 'log-row' },
         h('span', { class: 'u-date', text: u.date.slice(0, 10) }),
-        document.createTextNode(u.text),
-        u.dream ? h('span', { style: 'opacity:.55;font-size:11.5px', text: ` — ${u.dream}` }) : null,
-        h('button', {
-          class: 'btn btn-secondary log-restore', text: '↩ bring back',
-          onclick: () => { u.restore(); persist(); renderAll(); closeModal(); openTasksModal(); toast('Back in the tray'); },
-        }),
+        h('span', { class: 'log-text' },
+          document.createTextNode(u.text),
+          u.dream ? h('span', { class: 'log-dream', text: ` — ${u.dream}` }) : null,
+        ),
+        h('span', { class: 'log-actions' },
+          h('button', {
+            class: 'btn btn-secondary log-restore', text: '↩ bring back',
+            onclick: () => { u.restore(); persist(); renderAll(); closeModal(); openTasksModal(); toast('Back in the tray'); },
+          }),
+        ),
       )))
       : h('p', { style: 'font-size:13px;opacity:.6;font-style:italic', text: 'No tasks caught yet — today is a fine day to start.' }),
   ));
@@ -3124,6 +3213,7 @@ function wireHoverCast() {
 function init() {
   wireHeader();
   wireQuickAdd();
+  wireTrayDrag();
   wireHoverCast();
   wireFridge();
   wireApartment();

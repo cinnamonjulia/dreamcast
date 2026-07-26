@@ -558,8 +558,38 @@ body[data-sparkle="3"] .bg-cloud {
 }
 .pill-note-btn:hover { background: var(--white); }
 
-.tasks-log-btn { position: absolute; top: 12px; right: 18px; z-index: 2; }
+/* task log: a quiet ghost pill tucked in the tray's corner */
+.tasks-log-btn {
+  position: absolute; top: 10px; right: 14px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: none;
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font: inherit; font-size: 12px; font-weight: 700;
+  color: var(--periwinkle-text);
+  opacity: .7;
+  cursor: pointer;
+  transition: opacity .2s, background .2s, box-shadow .2s, transform .15s;
+}
+.tasks-log-btn svg { flex: none; }
+.tasks-log-btn:hover, .tasks-log-btn:focus-visible {
+  opacity: 1;
+  background: rgba(255, 255, 255, .85);
+  box-shadow: 0 3px 12px rgba(142, 151, 232, .28);
+  transform: translateY(-1px);
+}
 #tray { position: relative; }
+
+/* trays welcome a dragged pill */
+.tray-pill[draggable="true"] { cursor: grab; }
+.tray-pill.dragging { opacity: .4; animation: none; cursor: grabbing; }
+.tray-group { border-radius: 14px; transition: background .15s; }
+.tray-group.drag-over {
+  background: rgba(142, 151, 232, .1);
+  outline: 2px dashed rgba(142, 151, 232, .5);
+  outline-offset: 5px;
+}
 
 .pill-time {
   font-size: 10.5px;
@@ -654,9 +684,13 @@ body[data-sparkle="3"] .bg-cloud {
 .qa-date-clear:hover { color: var(--pink); }
 
 /* task log rows */
-.log-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.log-row { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
 .log-row a { color: var(--blue-text); font-weight: 700; text-decoration: none; }
 .log-row a:hover { color: var(--pink); }
+.log-text { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log-dream { opacity: .55; font-size: 11.5px; }
+.log-actions { display: flex; gap: 5px; flex: none; margin-left: auto; opacity: .6; transition: opacity .15s; }
+.log-row:hover .log-actions, .log-row:focus-within .log-actions { opacity: 1; }
 .log-date {
   border: 1.5px solid rgba(142, 151, 232, .4);
   border-radius: 10px;
@@ -664,7 +698,7 @@ body[data-sparkle="3"] .bg-cloud {
   font-size: 11.5px;
   background: rgba(255, 255, 255, .85);
 }
-.log-restore { padding: 3px 10px; font-size: 11.5px; margin-left: auto; }
+.log-restore { padding: 3px 10px; font-size: 11.5px; margin-left: 0; white-space: nowrap; }
 
 .quick-add input[type=text] {
   width: min(100%, 260px);
