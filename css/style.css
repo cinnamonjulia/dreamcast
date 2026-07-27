@@ -33,6 +33,59 @@
   --card-bg: rgba(255, 255, 255, .82);
   --radius-lg: 26px;
   --radius-md: 18px;
+
+  /* ---- time-of-day sky (body[data-sky], set by js/nightsky.js) ----
+     Defaults here ARE night. Day/twilight override them below.
+     --day-mix crossfades the bright gradient over the night one;
+     --day-star-scale multiplies the sparkle-level star opacity so the
+     two systems compose instead of fighting. */
+  --day-mix: 0;
+  --day-star-scale: 1;
+  --star-fill: #FFFFFF;
+  --star-line: rgba(216, 224, 248, .15);
+  --filler-color: rgba(255, 255, 255, .9);
+  --cloud-color: #B8BFD6;
+  --cloud-tint-color: #BCA9C6;
+  --cloud-op: .3;
+  --onsky-text: #E9ECFA;
+  --onsky-shadow: 0 1px 8px rgba(10, 14, 32, .65);
+  --moon-core: #FFFDF2;
+  --moon-mid: #DDE2F5;
+  --moon-halo: rgba(222, 228, 252, .28);
+}
+
+/* Dusk & dawn — halfway between, stars still white and present. */
+body[data-sky="twilight"] {
+  --day-mix: .5;
+  --day-star-scale: .72;
+  --star-line: rgba(216, 224, 248, .13);
+  --cloud-color: #D5CFE2;
+  --cloud-tint-color: #D9BBD4;
+  --cloud-op: .36;
+  --onsky-text: #F2EAF8;
+  --moon-core: #FFFCF6;
+  --moon-mid: #EED9EE;
+  --moon-halo: rgba(240, 220, 246, .34);
+}
+
+/* Daytime — bright pink/purple, and the stars stay out: they flip to a
+   soft violet so they read as pinpricks on a light sky instead of
+   vanishing the way white-on-pastel would. */
+body[data-sky="day"] {
+  --day-mix: 1;
+  --day-star-scale: .85;
+  --star-fill: #6C5AA8;
+  --star-line: rgba(108, 90, 168, .2);
+  --filler-color: rgba(108, 90, 168, .7);
+  --cloud-color: #FFFFFF;
+  --cloud-tint-color: #FFD9F0;
+  --cloud-op: .5;
+  --onsky-text: #4A3A72;
+  --onsky-shadow: 0 1px 6px rgba(255, 255, 255, .8);
+  --card-shadow: 0 12px 40px rgba(142, 151, 232, .35);
+  --moon-core: #FFFFFF;
+  --moon-mid: #FFE9F6;
+  --moon-halo: rgba(255, 214, 240, .45);
 }
 
 * { box-sizing: border-box; }
@@ -73,6 +126,23 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   overflow: hidden;
 }
 
+/* The daytime sky, crossfaded over the night one by --day-mix.
+   Layering two gradients (rather than swapping stops) is what lets the
+   change animate — CSS can't interpolate gradient color stops. */
+.sky-day {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg,
+    #8FA0E8 0%,
+    #A99BEA 30%,
+    #C79BE4 56%,
+    #E3A8DE 80%,
+    #F5C3E4 100%);
+  opacity: var(--day-mix);
+  transition: opacity 3s ease;
+}
+
 /* ---- starfield (sits behind the clouds, like the real sky) ----
    #constellations is the REAL sky over San Francisco at 11:11 PM on
    the current day, drawn at load by js/nightsky.js: computed star
@@ -84,15 +154,16 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: .88;
+  opacity: calc(var(--star-op, .88) * var(--day-star-scale));
   transition: opacity 4s ease;
 }
 #constellations .cline {
-  stroke: rgba(216, 224, 248, .15);
+  stroke: var(--star-line);
   stroke-width: 1;
   fill: none;
+  transition: stroke 3s ease;
 }
-#constellations .st { fill: #FFFFFF; }
+#constellations .st { fill: var(--star-fill); transition: fill 3s ease; }
 #constellations .tw { animation: twinkle 4s ease-in-out infinite; }
 .stars-small {
   position: absolute;
@@ -103,78 +174,80 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 }
 .stars-small {
   box-shadow:
-    32.4vw 10.9vh 0 0 rgba(255,255,255,.9),
-    65.1vw 5.2vh 0 0 rgba(255,255,255,.9),
-    53.6vw 26.3vh 0 0 rgba(255,255,255,.9),
-    5.8vw 36.5vh 0 0 rgba(255,255,255,.9),
-    3.7vw 31.2vh 0 0 rgba(255,255,255,.9),
-    7.0vw 6.5vh 0 0 rgba(255,255,255,.9),
-    42.5vw 59.5vh 0 0 rgba(255,255,255,.9),
-    12.4vw 16.1vh 0 0 rgba(255,255,255,.9),
-    62.7vw 68.2vh 0 0 rgba(255,255,255,.9),
-    57.7vw 28.6vh 0 0 rgba(255,255,255,.9),
-    97.6vw 3.4vh 0 0 rgba(255,255,255,.9),
-    85.8vw 20.9vh 0 0 rgba(255,255,255,.9),
-    14.4vw 8.5vh 0 0 rgba(255,255,255,.9),
-    30.8vw 58.8vh 0 0 rgba(255,255,255,.9),
-    18.1vw 41.9vh 0 0 rgba(255,255,255,.9),
-    63.9vw 26.8vh 0 0 rgba(255,255,255,.9),
-    54.8vw 4.5vh 0 0 rgba(255,255,255,.9),
-    6.0vw 14.8vh 0 0 rgba(255,255,255,.9),
-    68.0vw 30.8vh 0 0 rgba(255,255,255,.9),
-    31.4vw 42.2vh 0 0 rgba(255,255,255,.9),
-    45.3vw 21.6vh 0 0 rgba(255,255,255,.9),
-    79.4vw 50.3vh 0 0 rgba(255,255,255,.9),
-    24.4vw 41.4vh 0 0 rgba(255,255,255,.9),
-    52.5vw 63.0vh 0 0 rgba(255,255,255,.9),
-    72.9vw 20.7vh 0 0 rgba(255,255,255,.9),
-    98.0vw 8.5vh 0 0 rgba(255,255,255,.9),
-    41.8vw 54.5vh 0 0 rgba(255,255,255,.9),
-    15.2vw 35.2vh 0 0 rgba(255,255,255,.9),
-    3.9vw 48.1vh 0 0 rgba(255,255,255,.9),
-    76.5vw 41.3vh 0 0 rgba(255,255,255,.9),
-    87.5vw 22.6vh 0 0 rgba(255,255,255,.9),
-    69.5vw 42.8vh 0 0 rgba(255,255,255,.9),
-    58.0vw 32.8vh 0 0 rgba(255,255,255,.9),
-    84.0vw 68.0vh 0 0 rgba(255,255,255,.9),
-    47.4vw 47.8vh 0 0 rgba(255,255,255,.9),
-    6.1vw 50.5vh 0 0 rgba(255,255,255,.9),
-    64.7vw 71.5vh 0 0 rgba(255,255,255,.9),
-    82.2vw 20.5vh 0 0 rgba(255,255,255,.9),
-    38.6vw 48.1vh 0 0 rgba(255,255,255,.9),
-    2.3vw 33.2vh 0 0 rgba(255,255,255,.9),
-    16.8vw 8.4vh 0 0 rgba(255,255,255,.9),
-    5.9vw 55.3vh 0 0 rgba(255,255,255,.9),
-    12.9vw 17.8vh 0 0 rgba(255,255,255,.9),
-    39.1vw 62.7vh 0 0 rgba(255,255,255,.9),
-    8.1vw 32.3vh 0 0 rgba(255,255,255,.9),
-    54.9vw 63.6vh 0 0 rgba(255,255,255,.9),
-    81.9vw 62.2vh 0 0 rgba(255,255,255,.9),
-    27.8vw 29.9vh 0 0 rgba(255,255,255,.9),
-    35.9vw 63.7vh 0 0 rgba(255,255,255,.9),
-    95.8vw 10.9vh 0 0 rgba(255,255,255,.9),
-    17.6vw 16.7vh 0 0 rgba(255,255,255,.9),
-    23.3vw 34.9vh 0 0 rgba(255,255,255,.9),
-    58.9vw 18.9vh 0 0 rgba(255,255,255,.9),
-    0.4vw 30.2vh 0 0 rgba(255,255,255,.9),
-    36.9vw 40.8vh 0 0 rgba(255,255,255,.9),
-    95.3vw 49.7vh 0 0 rgba(255,255,255,.9),
-    51.5vw 44.5vh 0 0 rgba(255,255,255,.9),
-    67.6vw 3.9vh 0 0 rgba(255,255,255,.9),
-    90.0vw 56.2vh 0 0 rgba(255,255,255,.9),
-    87.5vw 57.4vh 0 0 rgba(255,255,255,.9),
-    39.2vw 28.7vh 0 0 rgba(255,255,255,.9),
-    10.4vw 45.7vh 0 0 rgba(255,255,255,.9),
-    6.2vw 4.8vh 0 0 rgba(255,255,255,.9),
-    20.9vw 11.7vh 0 0 rgba(255,255,255,.9),
-    34.0vw 3.8vh 0 0 rgba(255,255,255,.9),
-    0.0vw 10.9vh 0 0 rgba(255,255,255,.9),
-    10.1vw 26.2vh 0 0 rgba(255,255,255,.9),
-    2.6vw 63.0vh 0 0 rgba(255,255,255,.9),
-    61.4vw 10.7vh 0 0 rgba(255,255,255,.9),
-    25.2vw 25.0vh 0 0 rgba(255,255,255,.9);
-  opacity: .4;
+    32.4vw 10.9vh 0 0 currentColor,
+    65.1vw 5.2vh 0 0 currentColor,
+    53.6vw 26.3vh 0 0 currentColor,
+    5.8vw 36.5vh 0 0 currentColor,
+    3.7vw 31.2vh 0 0 currentColor,
+    7.0vw 6.5vh 0 0 currentColor,
+    42.5vw 59.5vh 0 0 currentColor,
+    12.4vw 16.1vh 0 0 currentColor,
+    62.7vw 68.2vh 0 0 currentColor,
+    57.7vw 28.6vh 0 0 currentColor,
+    97.6vw 3.4vh 0 0 currentColor,
+    85.8vw 20.9vh 0 0 currentColor,
+    14.4vw 8.5vh 0 0 currentColor,
+    30.8vw 58.8vh 0 0 currentColor,
+    18.1vw 41.9vh 0 0 currentColor,
+    63.9vw 26.8vh 0 0 currentColor,
+    54.8vw 4.5vh 0 0 currentColor,
+    6.0vw 14.8vh 0 0 currentColor,
+    68.0vw 30.8vh 0 0 currentColor,
+    31.4vw 42.2vh 0 0 currentColor,
+    45.3vw 21.6vh 0 0 currentColor,
+    79.4vw 50.3vh 0 0 currentColor,
+    24.4vw 41.4vh 0 0 currentColor,
+    52.5vw 63.0vh 0 0 currentColor,
+    72.9vw 20.7vh 0 0 currentColor,
+    98.0vw 8.5vh 0 0 currentColor,
+    41.8vw 54.5vh 0 0 currentColor,
+    15.2vw 35.2vh 0 0 currentColor,
+    3.9vw 48.1vh 0 0 currentColor,
+    76.5vw 41.3vh 0 0 currentColor,
+    87.5vw 22.6vh 0 0 currentColor,
+    69.5vw 42.8vh 0 0 currentColor,
+    58.0vw 32.8vh 0 0 currentColor,
+    84.0vw 68.0vh 0 0 currentColor,
+    47.4vw 47.8vh 0 0 currentColor,
+    6.1vw 50.5vh 0 0 currentColor,
+    64.7vw 71.5vh 0 0 currentColor,
+    82.2vw 20.5vh 0 0 currentColor,
+    38.6vw 48.1vh 0 0 currentColor,
+    2.3vw 33.2vh 0 0 currentColor,
+    16.8vw 8.4vh 0 0 currentColor,
+    5.9vw 55.3vh 0 0 currentColor,
+    12.9vw 17.8vh 0 0 currentColor,
+    39.1vw 62.7vh 0 0 currentColor,
+    8.1vw 32.3vh 0 0 currentColor,
+    54.9vw 63.6vh 0 0 currentColor,
+    81.9vw 62.2vh 0 0 currentColor,
+    27.8vw 29.9vh 0 0 currentColor,
+    35.9vw 63.7vh 0 0 currentColor,
+    95.8vw 10.9vh 0 0 currentColor,
+    17.6vw 16.7vh 0 0 currentColor,
+    23.3vw 34.9vh 0 0 currentColor,
+    58.9vw 18.9vh 0 0 currentColor,
+    0.4vw 30.2vh 0 0 currentColor,
+    36.9vw 40.8vh 0 0 currentColor,
+    95.3vw 49.7vh 0 0 currentColor,
+    51.5vw 44.5vh 0 0 currentColor,
+    67.6vw 3.9vh 0 0 currentColor,
+    90.0vw 56.2vh 0 0 currentColor,
+    87.5vw 57.4vh 0 0 currentColor,
+    39.2vw 28.7vh 0 0 currentColor,
+    10.4vw 45.7vh 0 0 currentColor,
+    6.2vw 4.8vh 0 0 currentColor,
+    20.9vw 11.7vh 0 0 currentColor,
+    34.0vw 3.8vh 0 0 currentColor,
+    0.0vw 10.9vh 0 0 currentColor,
+    10.1vw 26.2vh 0 0 currentColor,
+    2.6vw 63.0vh 0 0 currentColor,
+    61.4vw 10.7vh 0 0 currentColor,
+    25.2vw 25.0vh 0 0 currentColor;
+  color: var(--filler-color);
+  opacity: calc(var(--filler-op, .4) * var(--day-star-scale));
   animation: twinkle 5.5s ease-in-out infinite;
+  transition: color 3s ease;
 }
 /* twinkle dims via brightness so sparkle-level opacity boosts still apply */
 @keyframes twinkle {
@@ -186,10 +259,11 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 
 .bg-cloud {
   position: absolute;
-  background: #B8BFD6;
+  background: var(--cloud-color);
   border-radius: 50%;
   filter: blur(14px);
-  opacity: .3;
+  opacity: var(--cloud-op);
+  transition: background 3s ease, opacity 3s ease;
 }
 .bg-cloud::before, .bg-cloud::after {
   content: '';
@@ -199,10 +273,11 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
 }
 .bg-cloud::before { width: 65%; height: 90%; top: -38%; left: 14%; }
 .bg-cloud::after  { width: 50%; height: 75%; top: -22%; right: 10%; }
-.bg-cloud.tint-pink { background: #BCA9C6; opacity: .26; }
+/* layer opacities are multipliers of --cloud-op, so day/night scales them all */
+.bg-cloud.tint-pink { background: var(--cloud-tint-color); opacity: calc(var(--cloud-op) * .87); }
 
-.layer-far  .bg-cloud { opacity: .2; filter: blur(18px); }
-.layer-near .bg-cloud { opacity: .38; filter: blur(10px); }
+.layer-far  .bg-cloud { opacity: calc(var(--cloud-op) * .67); filter: blur(18px); }
+.layer-near .bg-cloud { opacity: calc(var(--cloud-op) * 1.27); filter: blur(10px); }
 
 .c1 { width: 260px; height: 90px; top: 8%;  animation: drift 170s linear infinite; }
 .c2 { width: 200px; height: 70px; top: 26%; animation: drift 150s linear infinite; animation-delay: -60s; }
@@ -219,12 +294,12 @@ input, textarea, select { font-family: inherit; color: var(--ink); }
   to   { transform: translateX(calc(100vw + 450px)); }
 }
 
-/* stars glow brighter as sparkle level rises */
-.stars-small { transition: opacity 4s ease; }
-body[data-sparkle="2"] .stars-small { opacity: .55; }
-body[data-sparkle="2"] #constellations { opacity: .96; }
-body[data-sparkle="3"] .stars-small { opacity: .7; }
-body[data-sparkle="3"] #constellations { opacity: 1; }
+/* Stars glow brighter as sparkle level rises. These set the base opacity
+   as variables so the time-of-day scale multiplies them rather than
+   overriding them — sparkle level and day/night stay independent. */
+.stars-small { transition: opacity 4s ease, color 3s ease; }
+body[data-sparkle="2"] { --filler-op: .55; --star-op: .96; }
+body[data-sparkle="3"] { --filler-op: .7;  --star-op: 1; }
 
 /* sun glints & shooting stars (spawned by JS) */
 .glint {
@@ -500,9 +575,10 @@ body[data-sparkle="3"] .bg-cloud {
   top: 4px;
   width: 64px; height: 64px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #FFFDF2, #DDE2F5 55%, rgba(200, 210, 245, 0) 72%);
+  background: radial-gradient(circle at 40% 35%, var(--moon-core), var(--moon-mid) 55%, rgba(200, 210, 245, 0) 72%);
   filter: blur(1px);
-  box-shadow: 0 0 46px 14px rgba(222, 228, 252, .28);
+  box-shadow: 0 0 46px 14px var(--moon-halo);
+  transition: background 3s ease, box-shadow 3s ease;
   pointer-events: none;
 }
 
@@ -541,10 +617,12 @@ body[data-sparkle="3"] .bg-cloud {
 
 .horizon-empty-hint {
   font-size: 12.5px;
-  color: rgba(233, 236, 250, .8);
+  color: var(--onsky-text);
+  opacity: .85;
   font-style: italic;
   padding: 8px;
-  text-shadow: 0 1px 6px rgba(10, 14, 32, .6);
+  text-shadow: var(--onsky-shadow);
+  transition: color 3s ease;
 }
 
 /* ============================ TRAY ============================ */
@@ -1229,7 +1307,7 @@ body[data-sparkle="3"] .bg-cloud {
   padding: 40px 20px;
   opacity: .85;
 }
-.empty-state p { font-family: var(--font-display); font-size: 16px; margin: 0; color: #E9ECFA; opacity: .85; text-shadow: 0 1px 8px rgba(10, 14, 32, .65); }
+.empty-state p { font-family: var(--font-display); font-size: 16px; margin: 0; color: var(--onsky-text); opacity: .85; text-shadow: var(--onsky-shadow); transition: color 3s ease; }
 
 /* ============================ FISHING OVERLAY & ORBS ============================ */
 

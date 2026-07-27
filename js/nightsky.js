@@ -219,7 +219,28 @@
     if (tip) tip.hidden = true;
   }
 
+  /* ---------------- time of day ----------------
+     The constellations are always tonight's 11:11 PM sky — that doesn't
+     change. What changes is the backdrop they sit on: bright pink/purple
+     by day (stars still out, flipped to violet so they stay visible),
+     the deep night sky after dark, and a halfway dusk between. All of it
+     is CSS variables keyed off body[data-sky]; see style.css. */
+
+  function skyModeFor(hour) {
+    if (hour >= 20 || hour < 6) return 'night';
+    if (hour < 8 || hour >= 18) return 'twilight';
+    return 'day';
+  }
+
+  function applySkyMode() {
+    var mode = skyModeFor(new Date().getHours());
+    if (document.body.dataset.sky !== mode) document.body.dataset.sky = mode;
+  }
+
   function init() {
+    applySkyMode();
+    setInterval(applySkyMode, 300000);   // re-check every 5 min so an
+                                         // open tab drifts with the clock
     drawBackdrop();
     var open = document.getElementById('sky-dock');
     var close = document.getElementById('skyview-close');
