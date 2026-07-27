@@ -16,6 +16,10 @@
 
 <!-- ======================= SKY BACKGROUND ======================= -->
 <div id="sky-bg" aria-hidden="true">
+  <div class="star-layer">
+    <div class="stars-small"></div>
+    <svg id="constellations" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true"></svg>
+  </div>
   <div class="cloud-layer layer-far">
     <div class="bg-cloud c1"></div>
     <div class="bg-cloud c2"></div>
@@ -31,7 +35,6 @@
     <div class="bg-cloud c8"></div>
     <div class="bg-cloud c9"></div>
   </div>
-  <div id="rainbow"></div>
   <div id="sparkle-field"></div>
   <div id="confetti-field"></div>
 </div>
@@ -305,6 +308,23 @@
   <span>The Apartment</span>
 </button>
 
+<!-- ======================= THE SKY DOCK ======================= -->
+<button id="sky-dock" aria-label="Open the night sky">
+  <svg viewBox="0 0 30 40" width="24" height="32" aria-hidden="true">
+    <path d="M21 7 A 12 12 0 1 0 21 33 A 14.5 14.5 0 0 1 21 7 Z" fill="#FFF6D9" stroke="#2B2440" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M22 13 l1.2 2.6 2.6 1.2 -2.6 1.2 -1.2 2.6 -1.2 -2.6 -2.6 -1.2 2.6 -1.2 Z" fill="#FFD98E" stroke="#2B2440" stroke-width="1"/>
+    <path d="M26 26 l.8 1.7 1.7 .8 -1.7 .8 -.8 1.7 -.8 -1.7 -1.7 -.8 1.7 -.8 Z" fill="#C3A6F1"/>
+  </svg>
+  <span>The Sky</span>
+</button>
+
+<!-- ======================= SKY VIEW OVERLAY ======================= -->
+<div id="skyview" hidden>
+  <svg id="skyview-svg" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true"></svg>
+  <button id="skyview-close" aria-label="Close the night sky">✕</button>
+  <div id="skyview-tip" hidden></div>
+</div>
+
 <!-- ======================= THE APARTMENT ======================= -->
 <section id="apartment-view" hidden>
   <div class="gallery-head">
@@ -430,6 +450,7 @@
 <div id="modal-root"></div>
 <div id="toast-root" aria-live="polite"></div>
 
+<script defer src="js/nightsky.js"></script>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>
