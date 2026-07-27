@@ -178,45 +178,77 @@ function updateSparkle() {
 
 /* ---------- filters ---------- */
 
+/* Scope and category filters are multi-select. An empty list means "All",
+   so Personal + Professional selected shows both and hides Peace & Passion.
+   Defensive about non-arrays in case an old save slips through migrate(). */
+const activeFilter = v => (Array.isArray(v) && v.length ? v : null);
+/* When exactly one thing is filtered to, quick-add still follows it (the old
+   "you're on the Professional tab, so this is professional" behaviour).
+   With several picked there's no single answer, so callers fall back. */
+const soleFilter = v => (Array.isArray(v) && v.length === 1 ? v[0] : null);
+
 function matchesScopeCat(d) {
   const s = state.settings;
-  if (s.filterScope !== 'all' && d.scope !== s.filterScope) return false;
-  if (s.filterCategory && d.category !== s.filterCategory) return false;
+  const scopes = activeFilter(s.filterScopes);
+  if (scopes && !scopes.includes(d.scope)) return false;
+  const cats = activeFilter(s.filterCategories);
+  if (cats && !cats.includes(d.category)) return false;
   return true;
+}
+
+/* Toggle a value in one of the filter lists, in place. */
+function toggleFilter(list, value) {
+  const i = list.indexOf(value);
+  if (i === -1) list.push(value); else list.splice(i, 1);
 }
 
 function renderFilters() {
   const s = state.settings;
+  // scope chips: "All" lights up only when nothing is picked; otherwise every
+  // selected scope stays lit at once
+  const pickedScopes = s.filterScopes || [];
   $$('#scope-filter .chip').forEach(c =>
-    c.classList.toggle('active', c.dataset.scope === s.filterScope));
+    c.classList.toggle('active', c.dataset.scope === 'all'
+      ? !pickedScopes.length
+      : pickedScopes.includes(c.dataset.scope)));
   $$('#horizon-filter .chip').forEach(c =>
     c.classList.toggle('active', c.dataset.horizon === s.filterHorizon));
 
-  // collapsed "Categories" chip shows the active pick as dot + name
-  const activeCat = state.categories.find(c => c.id === s.filterCategory);
+  // collapsed "Categories" chip: one pick shows its dot + name, several show a count
+  const pickedCats = (s.filterCategories || [])
+    .map(id => state.categories.find(c => c.id === id)).filter(Boolean);
   const catBtn = $('#cat-filter-btn');
   setChildren(catBtn,
-    activeCat ? h('span', { class: 'cat-dot', style: `background:${activeCat.color}` }) : null,
-    document.createTextNode(activeCat ? activeCat.name : 'Categories'),
+    pickedCats.length === 1
+      ? h('span', { class: 'cat-dot', style: `background:${pickedCats[0].color}` })
+      : null,
+    document.createTextNode(
+      pickedCats.length === 0 ? 'Categories'
+        : pickedCats.length === 1 ? pickedCats[0].name
+        : `${pickedCats.length} categories`),
     h('span', { class: 'chev', text: '▾' }),
   );
-  catBtn.classList.toggle('active', !!activeCat);
+  catBtn.classList.toggle('active', pickedCats.length > 0);
   const closePopover = () => { const p = $('#category-popover'); p.hidden = true; catBtn.setAttribute('aria-expanded', 'false'); };
 
   const catWrap = $('#category-filter');
   catWrap.replaceChildren(
     h('button', {
-      class: 'chip' + (!s.filterCategory ? ' active' : ''),
+      class: 'chip' + (!(s.filterCategories || []).length ? ' active' : ''),
       text: 'All',
-      onclick: () => { s.filterCategory = null; closePopover(); persist(); renderAll(); },
+      onclick: () => { s.filterCategories = []; closePopover(); persist(); renderAll(); },
     }),
     ...state.categories.map(cat =>
       h('button', {
-        class: 'chip cat-chip' + (s.filterCategory === cat.id ? ' active' : ''),
+        class: 'chip cat-chip' + ((s.filterCategories || []).includes(cat.id) ? ' active' : ''),
         // pale/med/accent/deep tiers derived from the category color (custom picks included)
         style: `--c-pale:${pastelize(cat.color, 0.72)};--c-med:${pastelize(cat.color, 0.52)};`
           + `--c-accent:${readableAccent(cat.color, 0.38)};--c-deep:${readableAccent(cat.color, 0.26)}`,
-        onclick: () => { s.filterCategory = s.filterCategory === cat.id ? null : cat.id; closePopover(); persist(); renderAll(); },
+        // Stays open while you pick — multi-select means you usually want another.
+        // stopPropagation matters: renderAll() below replaces this very chip, so
+        // by the time the outside-click listener runs, e.target is detached and
+        // popover.contains(target) would be false — closing it on every pick.
+        onclick: e => { e.stopPropagation(); toggleFilter(s.filterCategories, cat.id); persist(); renderAll(); },
       },
         h('span', { class: 'cat-dot', style: `background:${cat.color}` }),
         document.createTextNode(cat.name),
@@ -3029,7 +3061,10 @@ function toast(message, { linkText, onLink, duration = 5200 } = {}) {
 function wireHeader() {
   $$('#scope-filter .chip').forEach(c =>
     c.addEventListener('click', () => {
-      state.settings.filterScope = c.dataset.scope;
+      // "All" clears; any other chip toggles, so Personal + Professional can
+      // both be lit while Peace & Passion stay hidden
+      if (c.dataset.scope === 'all') state.settings.filterScopes = [];
+      else toggleFilter(state.settings.filterScopes, c.dataset.scope);
       persist(); sounds.tick(); renderAll();
     }));
 
@@ -3110,14 +3145,14 @@ function renderQuickAddSelects() {
   $$('.quick-add .qa-cat').forEach(sel => {
     const prev = sel.value;
     setChildren(sel, ...state.categories.map(c => h('option', { value: c.id, text: c.name })));
-    const preferred = state.settings.filterCategory || prev || state.settings.lastUsedCategory;
+    const preferred = soleFilter(state.settings.filterCategories) || prev || state.settings.lastUsedCategory;
     if (preferred && state.categories.some(c => c.id === preferred)) sel.value = preferred;
   });
   $$('.quick-add .qa-scope').forEach(sel => {
     const prev = sel.value;
     setChildren(sel, ...SCOPE_OPTIONS.map(([v, label]) => h('option', { value: v, text: label })));
     // follow the active P tab; otherwise keep whatever was picked
-    sel.value = state.settings.filterScope !== 'all' ? state.settings.filterScope : (prev || 'personal');
+    sel.value = soleFilter(state.settings.filterScopes) || prev || 'personal';
   });
 }
 
@@ -3156,7 +3191,7 @@ function wireQuickAdd() {
       const title = input.value.trim();
       if (!title) return;
       const scope = scopeSel?.value
-        || (state.settings.filterScope !== 'all' ? state.settings.filterScope : 'personal');
+        || soleFilter(state.settings.filterScopes) || 'personal';
       state.dreams.unshift(makeDream({
         title,
         horizon: 'short',

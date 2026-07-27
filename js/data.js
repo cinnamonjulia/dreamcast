@@ -192,8 +192,9 @@ export function defaultState() {
     settings: {
       muted: false,
       sort: 'momentum',
-      filterCategory: null,
-      filterScope: 'all',
+      // multi-select: [] means "All". Otherwise show only what's listed.
+      filterCategories: [],
+      filterScopes: [],
       filterHorizon: 'all',
       lastOpenDate: todayISO(),
       lastOpenWeek: weekKey(),
@@ -264,6 +265,19 @@ function migrate(raw) {
     const colors = new Map(CATEGORY_SET.map(([id, , color]) => [id, color]));
     raw.categories.forEach(c => { const color = colors.get(c.id); if (color) c.color = color; });
     raw.catsV3 = true;
+  }
+  // scope & category filters became multi-select: the old single values
+  // ('all'/null meaning "no filter") become [] / [id].
+  if (raw.settings && typeof raw.settings === 'object') {
+    const st = raw.settings;
+    if (!Array.isArray(st.filterScopes)) {
+      st.filterScopes = st.filterScope && st.filterScope !== 'all' ? [st.filterScope] : [];
+    }
+    if (!Array.isArray(st.filterCategories)) {
+      st.filterCategories = st.filterCategory ? [st.filterCategory] : [];
+    }
+    delete st.filterScope;
+    delete st.filterCategory;
   }
   // future: if (raw.version === 1) { ...upgrade...; raw.version = 2; }
   return raw;
